@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Payment not completed — VT Markets</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="checkoutfiles/flow.css?v=1">
+</head>
+<body>
+
+    <header class="flow-topbar">
+        <div class="flow-brand">
+            <div class="flow-logo">vt</div>
+            <div class="flow-brand-name">vt <span>markets</span></div>
+        </div>
+        <span class="flow-secure">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <span id="flowSecureLbl">Secure</span>
+        </span>
+    </header>
+
+    <nav class="flow-steps">
+        <div class="fstep" id="fstep1"><span class="fstep-dot">1</span><span class="fstep-label">Payment</span></div>
+        <div class="fstep-bar"></div>
+        <div class="fstep" id="fstep2"><span class="fstep-dot">2</span><span class="fstep-label on-mobile">Verification</span></div>
+        <div class="fstep-bar"></div>
+        <div class="fstep" id="fstep3"><span class="fstep-dot">3</span><span class="fstep-label">Confirmation</span></div>
+    </nav>
+
+    <main class="flow-main">
+        <div class="flow-card single">
+            <section class="flow-panel">
+                <div class="v-wrap">
+                    <div class="v-icon bad">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                    </div>
+
+                    <h1 class="v-title" id="ttl">Payment not completed</h1>
+                    <p class="v-text" id="lede">No money has left your account.</p>
+
+                    <div class="v-bankbar" style="margin-top:22px">
+                        <strong id="cardMask">•••• ••••</strong>
+                        <span>·</span>
+                        <strong id="amountLbl">—</strong>
+                    </div>
+
+                    <div class="receipt">
+                        <div class="receipt-row"><span id="rRefLbl">Reference</span><strong id="rRef">—</strong></div>
+                        <div class="receipt-row"><span id="rReasonLbl">Reason</span><strong id="rReason">—</strong></div>
+                        <div class="receipt-row"><span id="rDateLbl">Date</span><strong id="rDate">—</strong></div>
+                    </div>
+
+                    <a class="f-submit" href="checkout.html" style="margin-top:22px;text-decoration:none">
+                        <span id="retryLbl">Try again</span>
+                    </a>
+                    <a class="f-ghost" href="home.html" id="backLbl">Back to my account</a>
+
+                    <p class="f-legal" id="help" style="margin-top:16px;">
+                        If this keeps happening, contact your card issuer or try another payment method.
+                    </p>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="flow-foot" id="flowFoot"></footer>
+
+    <script src="checkoutfiles/flow.js?v=1"></script>
+    <script>
+    (function () {
+        'use strict';
+
+        var order = VTFlow.read() || {};
+        VTFlow.paintChrome(2);
+
+        var L = VTFlow.lang();
+        var T = function (en, fr, es) { return L === 'fr' ? fr : L === 'es' ? es : en; };
+        var set = function (id, v) { var e = document.getElementById(id); if (e) e.textContent = v; };
+
+        var REASONS = {
+            declined: T('Declined by your card issuer', "Refusé par l'émetteur de votre carte", 'Rechazado por el emisor de tu tarjeta'),
+            cancelled: T('Cancelled by you', 'Annulé par vous', 'Cancelado por ti'),
+            expired: T('Verification code expired', 'Code de vérification expiré', 'Código de verificación caducado'),
+            unknown: T('Verification was not completed', "La vérification n'a pas abouti", 'La verificación no se completó')
+        };
+
+        set('ttl', T('Payment not completed', "Paiement non abouti", 'Pago no completado'));
+        set('lede', T('No money has left your account.', "Aucun montant n'a été débité de votre compte.", 'No se ha retirado dinero de tu cuenta.'));
+        set('rRefLbl', T('Reference', 'Référence', 'Referencia'));
+        set('rReasonLbl', T('Reason', 'Motif', 'Motivo'));
+        set('rDateLbl', T('Date', 'Date', 'Fecha'));
+        set('retryLbl', T('Try again', 'Réessayer', 'Intentar de nuevo'));
+        set('backLbl', T('Back to my account', 'Retour à mon compte', 'Volver a mi cuenta'));
+        set('help', T('If this keeps happening, contact your card issuer or try another payment method.',
+                      "Si le problème persiste, contactez l'émetteur de votre carte ou essayez un autre moyen de paiement.",
+                      'Si esto continúa, contacta con el emisor de tu tarjeta o prueba otro método de pago.'));
+
+        set('cardMask', '•••• ' + (order.card4 || '····'));
+        set('amountLbl', order.amount ? VTFlow.money(order.amount, order.currency) : '—');
+        set('rRef', order.ref || '—');
+        set('rReason', REASONS[order.failReason] || REASONS.unknown);
+        set('rDate', new Date().toLocaleString());
+    })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Activate your account · VT Markets</title>
+  <!-- Optional: set the backend base URL in production -->
+  <!-- <meta name="vt-api-base" content="https://api.vtmarkets.example"> -->
+  <style>
+    :root { --blue:#1434CB; --bg:#0b1220; --card:#111a2e; --text:#e6edf7; --muted:#8ea0bd; --err:#ff4d4f; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:Inter,Arial,sans-serif; background:var(--bg); color:var(--text);
+           min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
+    .card { background:var(--card); border:1px solid #1e2b45; border-radius:16px; padding:32px; width:100%; max-width:420px; }
+    h1 { font-size:22px; margin:0 0 6px; }
+    p.sub { color:var(--muted); font-size:13px; margin:0 0 22px; }
+    label { display:block; font-size:12px; color:var(--muted); margin:14px 0 6px; }
+    input { width:100%; padding:12px 14px; border-radius:9px; border:1px solid #26344f; background:#0d1526; color:var(--text); font-size:14px; }
+    input:focus { outline:none; border-color:var(--blue); }
+    button { width:100%; margin-top:22px; padding:13px; border:0; border-radius:10px; background:var(--blue);
+             color:#fff; font-weight:700; font-size:15px; cursor:pointer; }
+    button:disabled { opacity:.6; cursor:default; }
+    .msg { margin-top:16px; font-size:13px; }
+    .msg.err { color:var(--err); }
+    .msg.ok { color:#22c55e; }
+    .brand { font-weight:800; letter-spacing:.5px; margin-bottom:20px; color:#fff; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="brand">VT&nbsp;MARKETS</div>
+    <h1>Activate your account</h1>
+    <p class="sub">Set a password to finish opening your trading account.</p>
+
+    <div id="form">
+      <label for="pw">New password</label>
+      <input id="pw" type="password" placeholder="At least 8 characters" autocomplete="new-password" />
+      <label for="pw2">Confirm password</label>
+      <input id="pw2" type="password" placeholder="Repeat password" autocomplete="new-password" />
+      <button id="submit">Activate account</button>
+      <div id="msg" class="msg"></div>
+    </div>
+  </div>
+
+  <script src="homesubfiles/api-client.js?v=1"></script>
+  <script>
+    (function () {
+      var params = new URLSearchParams(location.search);
+      var token = params.get('token');
+      var msg = document.getElementById('msg');
+      var btn = document.getElementById('submit');
+
+      if (!token) {
+        document.getElementById('form').innerHTML =
+          '<div class="msg err">This activation link is missing its token. Please use the link from your email.</div>';
+        return;
+      }
+
+      btn.addEventListener('click', function () {
+        var pw = document.getElementById('pw').value;
+        var pw2 = document.getElementById('pw2').value;
+        msg.className = 'msg'; msg.textContent = '';
+        if (pw.length < 8) { msg.className = 'msg err'; msg.textContent = 'Password must be at least 8 characters.'; return; }
+        if (pw !== pw2) { msg.className = 'msg err'; msg.textContent = 'Passwords do not match.'; return; }
+
+        btn.disabled = true; btn.textContent = 'Activating…';
+        window.VTApi.post('/api/auth/activate', { token: token, password: pw }, false)
+          .then(function (res) {
+            window.VTAuth.setToken(res.token);
+            msg.className = 'msg ok';
+            msg.textContent = 'Account activated. Redirecting…';
+            setTimeout(function () { window.location.href = 'home.html'; }, 900);
+          })
+          .catch(function (err) {
+            btn.disabled = false; btn.textContent = 'Activate account';
+            msg.className = 'msg err';
+            msg.textContent = (err && err.message) || 'Activation failed.';
+          });
+      });
+    })();
+  </script>
+</body>
+</html>

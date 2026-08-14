@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Payment confirmed — VT Markets</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="checkoutfiles/flow.css?v=1">
+</head>
+<body>
+
+    <header class="flow-topbar">
+        <div class="flow-brand">
+            <div class="flow-logo">vt</div>
+            <div class="flow-brand-name">vt <span>markets</span></div>
+        </div>
+        <span class="flow-secure">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <span id="flowSecureLbl">Secure</span>
+        </span>
+    </header>
+
+    <nav class="flow-steps">
+        <div class="fstep" id="fstep1"><span class="fstep-dot">1</span><span class="fstep-label">Payment</span></div>
+        <div class="fstep-bar"></div>
+        <div class="fstep" id="fstep2"><span class="fstep-dot">2</span><span class="fstep-label">Verification</span></div>
+        <div class="fstep-bar"></div>
+        <div class="fstep" id="fstep3"><span class="fstep-dot">3</span><span class="fstep-label on-mobile">Confirmation</span></div>
+    </nav>
+
+    <main class="flow-main">
+        <div class="flow-card single">
+            <section class="flow-panel">
+                <div class="v-wrap">
+                    <div class="v-icon ok">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>
+                    </div>
+
+                    <h1 class="v-title" id="ttl">Payment confirmed</h1>
+                    <p class="v-text" id="lede">Your funds have been credited to your VT Markets balance.</p>
+
+                    <div class="sum-amount" style="color:#059669;font-size:30px;margin:16px 0 0" id="amountBig">—</div>
+
+                    <div class="receipt">
+                        <div class="receipt-row"><span id="rRefLbl">Reference</span><strong id="rRef">—</strong></div>
+                        <div class="receipt-row"><span id="rAuthLbl">Authorisation code</span><strong id="rAuth">—</strong></div>
+                        <div class="receipt-row"><span id="rCardLbl">Card</span><strong id="rCard">—</strong></div>
+                        <div class="receipt-row"><span id="rDateLbl">Date</span><strong id="rDate">—</strong></div>
+                        <div class="receipt-row"><span id="rMethodLbl">Method</span><strong>3-D Secure</strong></div>
+                        <div class="receipt-row total"><span id="rTotalLbl">Credited</span><strong id="rTotal">—</strong></div>
+                    </div>
+
+                    <a class="f-submit" id="doneBtn" href="home.html" style="margin-top:22px;text-decoration:none">
+                        <span id="doneLbl">Return to my account</span>
+                    </a>
+                    <button class="f-ghost" id="receiptBtn">Download receipt</button>
+
+                    <p class="f-legal" id="legal" style="margin-top:16px;">
+                        A confirmation has been sent to your email address.
+                    </p>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="flow-foot" id="flowFoot"></footer>
+
+    <script src="checkoutfiles/flow.js?v=1"></script>
+    <script>
+    (function () {
+        'use strict';
+
+        var order = VTFlow.requireOrder();
+
+        VTFlow.paintChrome(3);
+
+        var L = VTFlow.lang();
+        var T = function (en, fr, es) { return L === 'fr' ? fr : L === 'es' ? es : en; };
+        var set = function (id, v) { var e = document.getElementById(id); if (e) e.textContent = v; };
+
+        set('ttl', T('Payment confirmed', 'Paiement confirmé', 'Pago confirmado'));
+        set('lede', T('Your funds have been credited to your VT Markets balance.',
+                      'Vos fonds ont été crédités sur votre solde VT Markets.',
+                      'Tus fondos se han acreditado en tu saldo de VT Markets.'));
+        set('rRefLbl', T('Reference', 'Référence', 'Referencia'));
+        set('rAuthLbl', T('Authorisation code', "Code d'autorisation", 'Código de autorización'));
+        set('rCardLbl', T('Card', 'Carte', 'Tarjeta'));
+        set('rDateLbl', T('Date', 'Date', 'Fecha'));
+        set('rMethodLbl', T('Method', 'Méthode', 'Método'));
+        set('rTotalLbl', T('Credited', 'Crédité', 'Acreditado'));
+        set('doneLbl', T('Return to my account', 'Retour à mon compte', 'Volver a mi cuenta'));
+        set('receiptBtn', T('Download receipt', 'Télécharger le reçu', 'Descargar recibo'));
+        set('legal', T('A confirmation has been sent to your email address.',
+                       'Une confirmation a été envoyée à votre adresse e-mail.',
+                       'Se ha enviado una confirmación a tu correo electrónico.'));
+
+        var amount = VTFlow.money(order.amount, order.currency);
+        set('amountBig', amount);
+        set('rRef', order.ref);
+        set('rAuth', order.authCode || '—');
+        set('rCard', '•••• ' + (order.card4 || '····'));
+        set('rDate', new Date(order.completed || Date.now()).toLocaleString());
+        set('rTotal', amount);
+
+        // Hand the credit back to the platform so the balance reflects it.
+        // A preview order must never move a real balance.
+        try {
+            if (order.preview) throw new Error('preview');
+            localStorage.setItem('vt_pending_credit', JSON.stringify({
+                amount: order.amount, currency: order.currency, ref: order.ref, at: Date.now()
+            }));
+        } catch (e) { /* storage unavailable — the balance simply will not move */ }
+
+        document.getElementById('receiptBtn').addEventListener('click', function () {
+            var lines = [
+                'VT MARKETS — PAYMENT RECEIPT',
+                '',
+                'Reference:      ' + order.ref,
+                'Authorisation:  ' + (order.authCode || '-'),
+                'Card:           **** ' + (order.card4 || '----'),
+                'Amount:         ' + amount,
+                'Method:         3-D Secure',
+                'Date:           ' + new Date(order.completed || Date.now()).toISOString(),
+                '',
+                'This receipt was generated by a prototype and is not a financial document.'
+            ].join('\n');
+
+            var blob = new Blob([lines], { type: 'text/plain' });
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'vtmarkets-receipt-' + order.ref + '.txt';
+            a.click();
+            URL.revokeObjectURL(a.href);
+        });
+
+        document.getElementById('doneBtn').addEventListener('click', function () {
+            VTFlow.clear();
+        });
+    })();
+    </script>
+</body>
+</html>

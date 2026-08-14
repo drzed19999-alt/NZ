@@ -1,0 +1,34 @@
+{
+  "name": "crm-adminpanel",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Standalone CRM + live admin panel for VT Markets. Meta lead ingestion, lead management, lead→user conversion, and live investor monitoring via the vtmarkets integration API + webhooks.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.5.1",
+    "@supabase/supabase-js": "^2.45.4",
+    "next": "14.2.5",
+    "nodemailer": "^6.9.14",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/nodemailer": "^8.0.1",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.39",
+    "tailwindcss": "^3.4.7",
+    "typescript": "^5.5.4"
+  },
+  "engines": {
+    "node": ">=18.17.0"
+  }
+}

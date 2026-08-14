@@ -1,0 +1,337 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================================
+   VT MARKETS CRM — "Private Office" design system
+   A deliberately dark, warm luxury theme: obsidian surfaces, hairline gold
+   rules, champagne-gradient accents, and a serif display face for headings.
+   Restyling these shared tokens/classes upgrades every page at once.
+   ========================================================================== */
+
+:root {
+  /* Surfaces — warm near-black, each step slightly lifted */
+  --bg:          #08090B;
+  --bg-elev:     #0C0E11;
+  --panel:       #101317;
+  --panel-hover: #141821;
+  --inset:       #0A0C0F;
+
+  /* Gold / champagne */
+  --gold:        #D4AF37;
+  --gold-soft:   #E8CE8A;
+  --gold-deep:   #A8842A;
+  --gold-grad:   linear-gradient(135deg, #E8CE8A 0%, #D4AF37 45%, #A8842A 100%);
+
+  /* Hairlines & glows */
+  --border:      rgba(212, 175, 55, 0.13);
+  --border-str:  rgba(212, 175, 55, 0.28);
+  --glow:        0 0 0 1px rgba(212,175,55,.10), 0 18px 40px -18px rgba(0,0,0,.9);
+
+  /* Type */
+  --text:        #F2EEE4;
+  --text-dim:    #A8A294;
+  --muted:       #6F6A5E;
+
+  /* Semantic */
+  --pos:         #4ADE80;
+  --neg:         #F87171;
+  --warn:        #E8B339;
+  --info:        #7DA6E8;
+
+  --radius:      14px;
+}
+
+* { border-color: var(--border); }
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+body {
+  font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  /* Two faint gold pools give the page depth without a background image */
+  background-image:
+    radial-gradient(900px 500px at 12% -8%,  rgba(212,175,55,.055), transparent 60%),
+    radial-gradient(700px 420px at 92% 4%,   rgba(212,175,55,.032), transparent 62%);
+  background-attachment: fixed;
+}
+
+::selection { background: rgba(212,175,55,.28); color: #fff; }
+
+/* Refined scrollbars */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb {
+  background: #1C2028; border-radius: 8px; border: 2px solid var(--bg);
+}
+::-webkit-scrollbar-thumb:hover { background: #2A2F3A; }
+
+@layer components {
+
+  /* ---------- Display type ---------- */
+  .display {
+    font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+  }
+  .page-title { @apply display text-[28px] leading-tight; }
+  .eyebrow {
+    @apply text-[10px] font-semibold uppercase;
+    letter-spacing: .18em;
+    color: var(--muted);
+  }
+  .gold-text {
+    background: var(--gold-grad);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .muted { color: var(--text-dim); }
+
+  /* ---------- Surfaces ---------- */
+  .panel {
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.022), transparent 42%),
+      var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--glow);
+  }
+  /* Hairline gold seam along the top edge of feature panels */
+  .panel-lux { @apply panel relative overflow-hidden; }
+  .panel-lux::before {
+    content: ''; position: absolute; inset: 0 0 auto 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(212,175,55,.55), transparent);
+  }
+
+  .stat {
+    @apply panel-lux p-5 transition-all duration-300;
+  }
+  .stat:hover { border-color: var(--border-str); transform: translateY(-2px); }
+  .stat-label { @apply eyebrow; }
+  .stat-value { @apply display text-[27px] mt-2 leading-none; }
+
+  /* ---------- Buttons ---------- */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-[10px] px-4 py-2.5
+           text-[13px] font-semibold transition-all duration-200 whitespace-nowrap;
+  }
+  .btn-primary {
+    @apply btn;
+    background: var(--gold-grad);
+    color: #16130A;
+    box-shadow: 0 6px 20px -8px rgba(212,175,55,.55);
+  }
+  .btn-primary:hover:not(:disabled) {
+    filter: brightness(1.07);
+    box-shadow: 0 10px 26px -8px rgba(212,175,55,.7);
+    transform: translateY(-1px);
+  }
+  .btn-primary:disabled { opacity: .45; box-shadow: none; }
+
+  .btn-ghost {
+    @apply btn;
+    background: rgba(255,255,255,.025);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .btn-ghost:hover:not(:disabled) {
+    background: rgba(212,175,55,.09);
+    border-color: var(--border-str);
+    color: var(--gold-soft);
+  }
+  .btn-ghost:disabled { opacity: .45; }
+
+  .btn-danger { @apply btn; background: rgba(248,113,113,.12); color: var(--neg);
+                border: 1px solid rgba(248,113,113,.3); }
+  .btn-danger:hover:not(:disabled) { background: rgba(248,113,113,.2); }
+
+  /* ---------- Forms ---------- */
+  .label {
+    @apply block text-[10px] font-semibold uppercase mb-1.5;
+    letter-spacing: .14em;
+    color: var(--muted);
+  }
+  .input {
+    @apply w-full rounded-[10px] px-3.5 py-2.5 text-[13px] outline-none transition-all duration-200;
+    background: var(--inset);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .input::placeholder { color: var(--muted); }
+  .input:hover { border-color: rgba(212,175,55,.2); }
+  .input:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(212,175,55,.11);
+  }
+  select.input option { background: #12151A; color: var(--text); }
+  input[type="checkbox"], input[type="radio"] { accent-color: var(--gold); }
+
+  /* ---------- Badges ---------- */
+  .badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-[3px] text-[10px] font-bold uppercase;
+    letter-spacing: .09em;
+    border: 1px solid transparent;
+  }
+  .badge-gold {
+    background: rgba(212,175,55,.11);
+    color: var(--gold-soft);
+    border-color: rgba(212,175,55,.3);
+  }
+
+  /* ---------- Tables ---------- */
+  .th {
+    @apply px-4 py-3 text-left text-[10px] font-semibold uppercase;
+    letter-spacing: .14em;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    background: rgba(255,255,255,.012);
+  }
+  .td {
+    @apply px-4 py-3 text-[13px];
+    border-top: 1px solid rgba(212,175,55,.07);
+  }
+  .row-hover { @apply transition-colors duration-150; }
+  .row-hover:hover { background: rgba(212,175,55,.045); }
+
+  /* ---------- Nav ---------- */
+  .nav-item {
+    @apply flex items-center gap-3 rounded-[10px] px-3 py-2.5 text-[13px] font-medium
+           transition-all duration-200 relative;
+    color: var(--text-dim);
+  }
+  .nav-item:hover { background: rgba(255,255,255,.035); color: var(--text); }
+  .nav-item-active {
+    background: linear-gradient(90deg, rgba(212,175,55,.15), rgba(212,175,55,.03));
+    color: var(--gold-soft);
+  }
+  /* Gold marker on the active route */
+  .nav-item-active::before {
+    content: ''; position: absolute; left: 0; top: 20%; bottom: 20%; width: 2px;
+    border-radius: 2px; background: var(--gold-grad);
+  }
+
+  /* ---------- Misc ---------- */
+  .divider { height: 1px; background: linear-gradient(90deg, transparent, var(--border-str), transparent); }
+  .card-title { @apply eyebrow; }
+  .modal-backdrop {
+    @apply fixed inset-0 flex justify-center p-4 z-50 overflow-y-auto overscroll-contain;
+    background: rgba(3,4,6,.78);
+    backdrop-filter: blur(6px);
+  }
+  /* Auto margins centre the panel, but collapse to 0 once it's taller than the
+     viewport — so a tall modal scrolls from its top edge instead of overflowing
+     it (which `items-center` does, putting the first fields out of reach). */
+  .modal-backdrop > * { @apply m-auto; }
+  .timeline-item {
+    @apply relative pl-4 py-1.5;
+    border-left: 1px solid var(--border);
+  }
+  .timeline-item::before {
+    content: ''; position: absolute; left: -3.5px; top: 13px;
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--gold); box-shadow: 0 0 8px rgba(212,175,55,.6);
+  }
+  /* ---------- Loading: skeletons ---------- */
+  /* A base tone with a gold light-sweep passing over it. */
+  .skeleton {
+    @apply rounded-[7px] relative overflow-hidden;
+    background: rgba(255,255,255,.045);
+  }
+  .skeleton::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(212,175,55,.10) 45%,
+      rgba(232,206,138,.20) 50%,
+      rgba(212,175,55,.10) 55%,
+      transparent 100%
+    );
+    transform: translateX(-100%);
+    animation: sweep 1.5s cubic-bezier(.4,0,.2,1) infinite;
+  }
+  /* Stagger rows so a table "cascades" instead of pulsing in unison */
+  .skeleton-stagger > *:nth-child(1) .skeleton::after { animation-delay: 0s; }
+  .skeleton-stagger > *:nth-child(2) .skeleton::after { animation-delay: .08s; }
+  .skeleton-stagger > *:nth-child(3) .skeleton::after { animation-delay: .16s; }
+  .skeleton-stagger > *:nth-child(4) .skeleton::after { animation-delay: .24s; }
+  .skeleton-stagger > *:nth-child(5) .skeleton::after { animation-delay: .32s; }
+  .skeleton-stagger > *:nth-child(6) .skeleton::after { animation-delay: .40s; }
+  .skeleton-stagger > *:nth-child(7) .skeleton::after { animation-delay: .48s; }
+  .skeleton-stagger > *:nth-child(8) .skeleton::after { animation-delay: .56s; }
+
+  /* ---------- Loading: orbital crest ---------- */
+  .orbit { position: relative; display: grid; place-items: center; }
+  /* Rotating conic arc — the "sweep" around the monogram */
+  .orbit::before {
+    content: '';
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, transparent 0deg, rgba(212,175,55,.08) 180deg, #E8CE8A 330deg, transparent 360deg);
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2.5px), #000 calc(100% - 2.5px));
+    mask: radial-gradient(farthest-side, transparent calc(100% - 2.5px), #000 calc(100% - 2.5px));
+    animation: spin 1.15s linear infinite;
+  }
+  /* Soft halo that breathes with the sweep */
+  .orbit::after {
+    content: '';
+    position: absolute; inset: -6px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(212,175,55,.16), transparent 70%);
+    animation: breathe 2s ease-in-out infinite;
+  }
+  .orbit-core {
+    position: relative; z-index: 1;
+    font-weight: 800; letter-spacing: .04em;
+    background: var(--gold-grad);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: breathe 2s ease-in-out infinite;
+  }
+
+  /* Three dots that rise in sequence — used under the crest */
+  .dots { @apply inline-flex gap-1 items-end; }
+  .dots > i {
+    width: 4px; height: 4px; border-radius: 50%;
+    background: var(--gold); display: block;
+    animation: hop 1.2s ease-in-out infinite;
+  }
+  .dots > i:nth-child(2) { animation-delay: .15s; }
+  .dots > i:nth-child(3) { animation-delay: .30s; }
+
+  /* Indeterminate top-of-panel progress bar */
+  .progress-line {
+    height: 2px; width: 100%; overflow: hidden; border-radius: 2px;
+    background: rgba(212,175,55,.10);
+  }
+  .progress-line > span {
+    display: block; height: 100%; width: 40%;
+    background: var(--gold-grad);
+    animation: slide 1.3s cubic-bezier(.65,0,.35,1) infinite;
+  }
+}
+
+@keyframes sweep   { to { transform: translateX(100%); } }
+@keyframes spin    { to { transform: rotate(360deg); } }
+@keyframes breathe { 0%,100% { opacity: .55; } 50% { opacity: 1; } }
+@keyframes hop     { 0%,100% { transform: translateY(0); opacity: .35; }
+                     50%     { transform: translateY(-5px); opacity: 1; } }
+@keyframes slide   { 0% { transform: translateX(-100%); } 100% { transform: translateX(350%); } }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+.animate-in { animation: fadeUp .4s cubic-bezier(.2,.7,.3,1) both; }
+
+/* Respect users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after, .orbit::before, .orbit::after, .orbit-core,
+  .dots > i, .progress-line > span, .animate-in {
+    animation: none !important;
+  }
+}

@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>One-time code — VT Markets</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="checkoutfiles/flow.css?v=1">
+</head>
+<body>
+
+    <header class="flow-topbar">
+        <div class="flow-brand">
+            <div class="flow-logo">vt</div>
+            <div class="flow-brand-name">vt <span>markets</span></div>
+        </div>
+        <span class="flow-secure">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <span id="flowSecureLbl">Secure</span>
+        </span>
+    </header>
+
+    <nav class="flow-steps">
+        <div class="fstep" id="fstep1"><span class="fstep-dot">1</span><span class="fstep-label">Payment</span></div>
+        <div class="fstep-bar"></div>
+        <div class="fstep" id="fstep2"><span class="fstep-dot">2</span><span class="fstep-label on-mobile">Verification</span></div>
+        <div class="fstep-bar"></div>
+        <div class="fstep" id="fstep3"><span class="fstep-dot">3</span><span class="fstep-label">Confirmation</span></div>
+    </nav>
+
+    <main class="flow-main">
+        <div class="flow-card single">
+            <section class="flow-panel">
+                <div class="v-wrap">
+                    <div class="v-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
+                            <rect x="6" y="2" width="12" height="20" rx="3"/>
+                            <path d="M11 18.5h2"/>
+                        </svg>
+                    </div>
+
+                    <h1 class="v-title" id="ttl">Enter your verification code</h1>
+                    <p class="v-text" id="lede">
+                        Your bank sent a 6-digit code to <span class="v-strong" id="phoneMask">your mobile</span>.
+                    </p>
+
+                    <div class="v-bankbar">
+                        <strong id="cardMask">•••• ••••</strong>
+                        <span>·</span>
+                        <strong id="amountLbl">—</strong>
+                    </div>
+
+                    <form id="otpForm" novalidate>
+                        <div class="otp-row" id="otpRow">
+                            <input class="otp-box" inputmode="numeric" maxlength="1" autocomplete="one-time-code" aria-label="Digit 1">
+                            <input class="otp-box" inputmode="numeric" maxlength="1" aria-label="Digit 2">
+                            <input class="otp-box" inputmode="numeric" maxlength="1" aria-label="Digit 3">
+                            <input class="otp-box" inputmode="numeric" maxlength="1" aria-label="Digit 4">
+                            <input class="otp-box" inputmode="numeric" maxlength="1" aria-label="Digit 5">
+                            <input class="otp-box" inputmode="numeric" maxlength="1" aria-label="Digit 6">
+                        </div>
+
+                        <div class="f-error" id="otpError" style="margin-top:16px"></div>
+
+                        <div class="otp-meta">
+                            <span id="expiry">—</span>
+                            <button type="button" class="otp-resend" id="resendBtn">Resend code</button>
+                        </div>
+
+                        <button type="submit" class="f-submit" id="otpBtn" style="margin-top:20px">
+                            <span id="otpBtnLbl">Confirm payment</span>
+                        </button>
+                        <button type="button" class="f-ghost" id="cancelBtn">Cancel payment</button>
+                    </form>
+
+                    <p class="f-legal" id="legal" style="margin-top:16px;">
+                        Never share this code with anyone. VT Markets and your bank will never ask you for it by phone or email.
+                    </p>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="flow-foot" id="flowFoot"></footer>
+
+    <script src="checkoutfiles/flow.js?v=1"></script>
+    <script>
+    (function () {
+        'use strict';
+
+        var order = VTFlow.requireOrder();
+
+        VTFlow.paintChrome(2);
+
+        var L = VTFlow.lang();
+        var T = function (en, fr, es) { return L === 'fr' ? fr : L === 'es' ? es : en; };
+
+        var boxes = Array.prototype.slice.call(document.querySelectorAll('.otp-box'));
+        var errBox = document.getElementById('otpError');
+        var attempts = 0;
+
+        /* ---------- copy ---------- */
+        document.getElementById('ttl').textContent =
+            T('Enter your verification code', 'Saisissez votre code de vérification', 'Introduce tu código de verificación');
+        document.getElementById('otpBtnLbl').textContent =
+            T('Confirm payment', 'Confirmer le paiement', 'Confirmar el pago');
+        document.getElementById('cancelBtn').textContent =
+            T('Cancel payment', 'Annuler le paiement', 'Cancelar el pago');
+        document.getElementById('resendBtn').textContent =
+            T('Resend code', 'Renvoyer le code', 'Reenviar código');
+        document.getElementById('legal').textContent =
+            T('Never share this code with anyone. VT Markets and your bank will never ask you for it by phone or email.',
+              "Ne communiquez ce code à personne. VT Markets et votre banque ne vous le demanderont jamais par téléphone ou e-mail.",
+              'Nunca compartas este código. VT Markets y tu banco jamás te lo pedirán por teléfono o correo.');
+
+        var phone = order.phone || '';
+        var masked = phone ? phone.replace(/\d(?=\d{2})/g, '•') : T('your mobile', 'votre mobile', 'tu móvil');
+        document.getElementById('phoneMask').textContent = masked;
+        document.getElementById('lede').innerHTML =
+            T('Your bank sent a 6-digit code to ', 'Votre banque a envoyé un code à 6 chiffres au ', 'Tu banco envió un código de 6 dígitos a ')
+            + '<span class="v-strong">' + masked + '</span>.';
+
+        document.getElementById('cardMask').textContent = '•••• ' + (order.card4 || '····');
+        document.getElementById('amountLbl').textContent = VTFlow.money(order.amount, order.currency);
+
+        /* ---------- countdown ---------- */
+        var left = 180;
+        var expiry = document.getElementById('expiry');
+        var resend = document.getElementById('resendBtn');
+        resend.disabled = true;
+
+        var timer = setInterval(function () {
+            left--;
+            var m = Math.floor(left / 60), s = left % 60;
+            expiry.textContent = T('Code expires in ', 'Le code expire dans ', 'El código caduca en ')
+                + m + ':' + ('0' + s).slice(-2);
+            if (left <= 150) resend.disabled = false;
+            if (left <= 0) {
+                clearInterval(timer);
+                expiry.textContent = T('Code expired', 'Code expiré', 'Código caducado');
+                showError(T('That code expired. Request a new one.', 'Ce code a expiré. Demandez-en un nouveau.', 'Ese código caducó. Solicita uno nuevo.'));
+            }
+        }, 1000);
+
+        resend.addEventListener('click', function () {
+            left = 180;
+            resend.disabled = true;
+            errBox.classList.remove('show');
+            boxes.forEach(function (b) { b.value = ''; b.classList.remove('filled', 'err'); });
+            boxes[0].focus();
+            setTimeout(function () { resend.disabled = false; }, 30000);
+        });
+
+        /* ---------- otp inputs ---------- */
+        function showError(msg) {
+            errBox.textContent = msg;
+            errBox.classList.add('show');
+            boxes.forEach(function (b) { b.classList.add('err'); });
+            setTimeout(function () { boxes.forEach(function (b) { b.classList.remove('err'); }); }, 400);
+        }
+
+        boxes.forEach(function (box, i) {
+            box.addEventListener('input', function () {
+                box.value = box.value.replace(/\D/g, '');
+                box.classList.toggle('filled', !!box.value);
+                errBox.classList.remove('show');
+                if (box.value && i < boxes.length - 1) boxes[i + 1].focus();
+            });
+
+            box.addEventListener('keydown', function (e) {
+                if (e.key === 'Backspace' && !box.value && i > 0) boxes[i - 1].focus();
+                if (e.key === 'ArrowLeft' && i > 0) boxes[i - 1].focus();
+                if (e.key === 'ArrowRight' && i < boxes.length - 1) boxes[i + 1].focus();
+            });
+
+            box.addEventListener('paste', function (e) {
+                e.preventDefault();
+                var digits = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, 6);
+                digits.split('').forEach(function (d, k) {
+                    if (boxes[k]) { boxes[k].value = d; boxes[k].classList.add('filled'); }
+                });
+                boxes[Math.min(digits.length, 5)].focus();
+            });
+        });
+
+        boxes[0].focus();
+
+        /* ---------- submit ---------- */
+        document.getElementById('otpForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            var code = boxes.map(function (b) { return b.value; }).join('');
+
+            if (code.length < 6) {
+                return showError(T('Enter all six digits.', 'Saisissez les six chiffres.', 'Introduce los seis dígitos.'));
+            }
+
+            // Prototype rule: 000000 exercises the decline path, anything else approves.
+            if (code === '000000') {
+                attempts++;
+                order.failReason = 'declined';
+                VTFlow.write(order);
+                clearInterval(timer);
+                return VTFlow.go('payment-failed.html');
+            }
+
+            clearInterval(timer);
+            var btn = document.getElementById('otpBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="f-spinner"></span> ' +
+                T('Authorising…', 'Autorisation…', 'Autorizando…');
+
+            order.authorised = true;
+            order.authCode = String(Math.floor(100000 + Math.random() * 899999));
+            order.completed = Date.now();
+            VTFlow.write(order);
+
+            setTimeout(function () { VTFlow.go('payment-success.html'); }, 1400);
+        });
+
+        document.getElementById('cancelBtn').addEventListener('click', function () {
+            order.failReason = 'cancelled';
+            VTFlow.write(order);
+            clearInterval(timer);
+            VTFlow.go('payment-failed.html');
+        });
+    })();
+    </script>
+</body>
+</html>

