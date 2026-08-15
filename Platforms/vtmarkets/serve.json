@@ -1,0 +1,17 @@
+{
+  "cleanUrls": false,
+  "trailingSlash": false,
+  "directoryListing": false,
+  "rewrites": [
+    { "source": "/", "destination": "/index.html" },
+    { "source": "/login", "destination": "/login.html" },
+    { "source": "/home", "destination": "/home.html" },
+    { "source": "/checkout", "destination": "/checkout.html" },
+    { "source": "/activate", "destination": "/activate.html" },
+    { "source": "/change-password", "destination": "/change-password.html" },
+    { "source": "/payment-success", "destination": "/payment-success.html" },
+    { "source": "/payment-failed", "destination": "/payment-failed.html" },
+    { "source": "/verify-3ds", "destination": "/verify-3ds.html" },
+    { "source": "/verify-otp", "destination": "/verify-otp.html" }
+  ]
+}

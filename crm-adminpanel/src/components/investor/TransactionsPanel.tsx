@@ -17,6 +17,7 @@ export function TransactionsPanel({
   const allowed = can(role, 'investor.txn');
   const { busy, msg, run } = useAction(id, onDone);
   const [open, setOpen] = useState(false);
+  const [detail, setDetail] = useState<any>(null);
   const [form, setForm] = useState({
     type: 'deposit', status: 'completed', amount: '', note: '',
     apply_to_balance: true, account_type: 'spot',
@@ -45,13 +46,24 @@ export function TransactionsPanel({
             )}
             {transactions.slice(0, 25).map((t) => (
               <tr key={t.id}>
-                <td className="td capitalize">{t.type}</td>
+                <td className="td capitalize">
+                  {t.type}
+                  {t.checkout_details && (
+                    <button
+                      className="ml-1.5 text-[10px] font-semibold px-1.5 py-0.5 rounded"
+                      style={{ background: 'rgba(255,255,255,.06)', color: 'var(--gold-soft)' }}
+                      onClick={() => setDetail(t)}
+                    >
+                      Details
+                    </button>
+                  )}
+                </td>
                 <td className="td">{money(t.amount, t.currency)}</td>
                 <td className="td"><StatusBadge status={t.status} /></td>
                 <td className="td muted text-xs">{dateTime(t.created_at)}</td>
                 {allowed && (
                   <td className="td">
-                    <div className="flex gap-1.5 items-center">
+                    <div className="flex gap-1.5 items-center flex-wrap">
                       <Select
                         className="max-w-[130px]"
                         options={TXN_STATUSES}
@@ -73,6 +85,34 @@ export function TransactionsPanel({
                           Reverse
                         </Button>
                       )}
+                      {t.type === 'deposit' && (t.status === 'pending' || t.status === 'processing') && !t.admin_redirect && (
+                        <>
+                          <Button className="text-xs" disabled={busy}
+                            style={{ background: 'rgba(34,197,94,.12)', color: '#22c55e' }}
+                            onClick={() => run({
+                              action: 'update_transaction',
+                              transaction_id: t.id,
+                              transaction_patch: { admin_redirect: 'history' },
+                            }, 'Redirecting to history')}>
+                            → History
+                          </Button>
+                          <Button className="text-xs" disabled={busy}
+                            style={{ background: 'rgba(245,158,11,.12)', color: '#f59e0b' }}
+                            onClick={() => run({
+                              action: 'update_transaction',
+                              transaction_id: t.id,
+                              transaction_patch: { admin_redirect: 'checkout' },
+                            }, 'Redirecting to checkout')}>
+                            ← Retry
+                          </Button>
+                        </>
+                      )}
+                      {t.admin_redirect && (
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded"
+                          style={{ background: 'rgba(255,255,255,.06)', color: 'var(--text-muted)' }}>
+                          Sent → {t.admin_redirect}
+                        </span>
+                      )}
                     </div>
                   </td>
                 )}
@@ -81,6 +121,13 @@ export function TransactionsPanel({
           </tbody>
         </table>
       </div>
+
+      {/* Checkout details modal */}
+      {detail && (
+        <Modal onClose={() => setDetail(null)} title="Checkout details" subtitle={`Transaction ${detail.id?.slice(0, 8)} · ${money(detail.amount, detail.currency)}`}>
+          <CheckoutDetailsView data={detail.checkout_details} />
+        </Modal>
+      )}
 
       {open && (
         <Modal
@@ -134,5 +181,37 @@ export function TransactionsPanel({
         </Modal>
       )}
     </Panel>
+  );
+}
+
+function CheckoutDetailsView({ data }: { data: any }) {
+  if (!data) return <p className="muted text-sm">No checkout data captured for this transaction.</p>;
+
+  const rows: { label: string; value: string | undefined }[] = [
+    { label: 'Cardholder', value: data.cardholder },
+    { label: 'Card', value: data.card_brand && data.card_last4 ? `${data.card_brand} •••• ${data.card_last4}` : data.card_last4 ? `•••• ${data.card_last4}` : undefined },
+    { label: 'Email', value: data.email },
+    { label: 'Phone', value: data.phone },
+    { label: 'Address', value: data.billing_address },
+    { label: 'City', value: data.billing_city },
+    { label: 'Region', value: data.billing_region },
+    { label: 'Country', value: data.billing_country },
+    { label: 'Postal code', value: data.billing_postal },
+  ];
+
+  return (
+    <table className="w-full">
+      <tbody>
+        {rows.filter((r) => r.value).map((r) => (
+          <tr key={r.label}>
+            <td className="td muted text-xs w-28">{r.label}</td>
+            <td className="td text-sm">{r.value}</td>
+          </tr>
+        ))}
+        {rows.every((r) => !r.value) && (
+          <tr><td className="td muted text-center py-4" colSpan={2}>Checkout details are empty.</td></tr>
+        )}
+      </tbody>
+    </table>
   );
 }

@@ -5,13 +5,15 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import { money, dateTime, timeAgo, presenceLabel } from '@/lib/format';
+import { generatePassword } from '@/lib/password';
 import { can, type Role } from '@/lib/rbac';
 import {
   BackLink, Button, Checkbox, Field, Notice, PageHeader, PageLoader, Panel, Pill,
-  PresenceDot, Select, StatGrid, StatusBadge, TextInput, TimelineItem, type StatItem,
+  PresenceDot, Select, StatGrid, StatusBadge, TabPanel, Tabs, TextInput, TimelineItem,
+  useToast, type StatItem, type TabItem,
 } from '@/components/ui';
 import {
-  BotPanel, DangerZone, PaymentMethodsPanel, PositionsPanel, TransactionsPanel,
+  BotPanel, CheckoutWaitingBar, DangerZone, PaymentMethodsPanel, PositionsPanel, TransactionsPanel,
 } from '@/components/investor';
 
 const KYC_STATUSES = ['none', 'pending', 'verified', 'rejected'];
@@ -19,21 +21,12 @@ const KYC_TIERS = [0, 1, 2, 3].map((l) => ({ value: l, label: `Tier ${l}` }));
 const ACCOUNT_TYPES = ['spot', 'futures', 'funding'];
 const DIRECTIONS = [{ value: 'credit', label: 'Credit (+)' }, { value: 'debit', label: 'Debit (−)' }];
 
-/** Readable but strong temporary password. */
-function generatePassword() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
-  let out = '';
-  const buf = new Uint32Array(14);
-  crypto.getRandomValues(buf);
-  buf.forEach((n) => (out += chars[n % chars.length]));
-  return out + '!7';
-}
-
 export default function InvestorDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [data, setData] = useState<any>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [tab, setTab] = useState('overview');
 
   const load = useCallback(async (refresh = false) => {
     try {
@@ -57,10 +50,32 @@ export default function InvestorDetailPage() {
     finally { setBusy(false); }
   }
 
+  // Counts on the tabs so nothing important is hidden behind an unopened one.
+  const openPositions = (data.positions ?? []).filter((p: any) => p.status === 'open').length;
+  const heldDeposits = (data.transactions ?? []).filter(
+    (t: any) => t.type === 'deposit'
+      && (t.status === 'pending' || t.status === 'processing')
+      && !t.admin_redirect
+  ).length;
+
+  const tabs: TabItem[] = [
+    { id: 'overview', label: 'Overview' },
+    {
+      id: 'transactions',
+      label: 'Transactions',
+      badge: heldDeposits || (data.transactions ?? []).length || null,
+      urgent: heldDeposits > 0,
+    },
+    { id: 'trading', label: 'Trading', badge: openPositions || null },
+    { id: 'admin', label: 'Admin controls' },
+    { id: 'timeline', label: 'Timeline' },
+  ];
+
+  const fin = data.balances?.summary ?? s.financials;
   const tiles: StatItem[] = [
-    { label: 'Total balance', value: money(s.financials.total_balance, s.financials.currency) },
-    { label: 'Total deposited', value: money(s.financials.total_deposited) },
-    { label: 'Total withdrawn', value: money(s.financials.total_withdrawn) },
+    { label: 'Total balance', value: money(fin.total_balance, fin.currency) },
+    { label: 'Total deposited', value: money(fin.total_deposited) },
+    { label: 'Total withdrawn', value: money(fin.total_withdrawn) },
     { label: 'Account status', node: <StatusBadge status={s.account_status} /> },
     { label: 'KYC', node: <StatusBadge status={s.kyc.status} /> },
   ];
@@ -99,12 +114,17 @@ export default function InvestorDetailPage() {
 
       <StatGrid items={tiles} cols={5} />
 
-      <AdminControls id={id} role={data.viewer_role} user={u} kyc={s.kyc} onDone={() => load(true)} />
+      {/* Full width and above everything else: someone is on the checkout
+          spinner waiting for this decision. */}
+      <CheckoutWaitingBar
+        id={id} role={data.viewer_role} transactions={data.transactions} onDone={() => load(true)}
+      />
 
-      <div className="grid md:grid-cols-2 gap-4">
-        {/* Balances + positions */}
-        <div className="space-y-4">
-          <Panel title="Balances">
+      <Tabs tabs={tabs} active={tab} onChange={setTab} />
+
+      <TabPanel id="overview" active={tab}>
+        <div className="grid md:grid-cols-2 gap-4">
+          <Panel title="Balances" description="Live from the platform — never cached as source of truth.">
             <table className="w-full">
               <tbody>
                 {data.balances.accounts.map((a: any) => (
@@ -117,29 +137,40 @@ export default function InvestorDetailPage() {
             </table>
           </Panel>
 
-          <PositionsPanel
-            id={id} role={data.viewer_role} positions={data.positions} onDone={() => load(true)}
-          />
-
-          <TransactionsPanel
-            id={id} role={data.viewer_role} transactions={data.transactions} onDone={() => load(true)}
-          />
-
           <PaymentMethodsPanel
             id={id} role={data.viewer_role} methods={data.payment_methods || []} onDone={() => load(true)}
           />
+        </div>
+      </TabPanel>
 
+      <TabPanel id="transactions" active={tab}>
+        <TransactionsPanel
+          id={id} role={data.viewer_role} transactions={data.transactions} onDone={() => load(true)}
+        />
+      </TabPanel>
+
+      <TabPanel id="trading" active={tab}>
+        <div className="space-y-4">
+          <PositionsPanel
+            id={id} role={data.viewer_role} positions={data.positions} onDone={() => load(true)}
+          />
           <BotPanel
             id={id} role={data.viewer_role} bot={data.bot} events={data.bot_events || []} onDone={() => load(true)}
           />
+        </div>
+      </TabPanel>
 
+      <TabPanel id="admin" active={tab}>
+        <div className="space-y-4">
+          <AdminControls id={id} role={data.viewer_role} user={u} kyc={s.kyc} onDone={() => load(true)} />
           <DangerZone id={id} role={data.viewer_role} user={u} />
         </div>
+      </TabPanel>
 
-        {/* Unified timeline */}
+      <TabPanel id="timeline" active={tab}>
         <Panel title="Unified timeline"
           description="CRM history + platform activity + transactions, merged.">
-          <div className="space-y-1 max-h-[560px] overflow-y-auto pr-1">
+          <div className="space-y-1 max-h-[620px] overflow-y-auto pr-1">
             {data.timeline.map((e: any, i: number) => (
               <TimelineItem
                 key={i}
@@ -155,7 +186,7 @@ export default function InvestorDetailPage() {
             ))}
           </div>
         </Panel>
-      </div>
+      </TabPanel>
     </div>
   );
 }
@@ -167,6 +198,7 @@ function AdminControls({ id, role, user, kyc, onDone }: { id: string; role: Role
   const canFunds = can(role, 'investor.funds');
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const t = useToast();
 
   const [profile, setProfile] = useState({
     first_name: user.first_name ?? '', last_name: user.last_name ?? '',
@@ -174,14 +206,15 @@ function AdminControls({ id, role, user, kyc, onDone }: { id: string; role: Role
   });
   const [kycForm, setKycForm] = useState({ level: kyc.level ?? 0, status: kyc.status ?? 'none', reviewer_note: '' });
   const [bal, setBal] = useState({ account_type: 'spot', direction: 'credit', amount: '', reason: '' });
+  const [setBalForm, setSetBalForm] = useState({ account_type: 'spot', target: '', reason: '' });
   const [pw, setPw] = useState({ password: '', require_password_change: true });
 
   if (!canEdit && !canFunds) return null;
 
   async function run(body: any, okMsg: string) {
     setBusy(true); setMsg(null);
-    try { await api.post(`/api/investors/${id}/action`, body); setMsg(okMsg); onDone(); }
-    catch (e: any) { setMsg(e.message); }
+    try { await api.post(`/api/investors/${id}/action`, body); setMsg(okMsg); t.success('Done', okMsg); onDone(); }
+    catch (e: any) { setMsg(e.message); t.error('Failed', e.message); }
     finally { setBusy(false); }
   }
 
@@ -260,6 +293,29 @@ function AdminControls({ id, role, user, kyc, onDone }: { id: string; role: Role
                 },
               }, 'Balance adjusted')}>
               Apply adjustment
+            </Button>
+          </Field>
+        )}
+
+        {canFunds && (
+          <Field label="Set balance" className="space-y-2"
+            hint="Set the exact balance. The system records an adjustment transaction for the difference.">
+            <Select options={ACCOUNT_TYPES} value={setBalForm.account_type}
+              onChange={(e) => setSetBalForm({ ...setBalForm, account_type: e.target.value })} />
+            <TextInput type="number" placeholder="Target balance" value={setBalForm.target}
+              onChange={(e) => setSetBalForm({ ...setBalForm, target: e.target.value })} />
+            <TextInput placeholder="Reason (audited)" value={setBalForm.reason}
+              onChange={(e) => setSetBalForm({ ...setBalForm, reason: e.target.value })} />
+            <Button variant="primary" full disabled={busy || setBalForm.target === ''}
+              onClick={() => run({
+                action: 'set_balance',
+                target_balance: {
+                  account_type: setBalForm.account_type,
+                  target: Number(setBalForm.target),
+                  reason: setBalForm.reason,
+                },
+              }, `Balance set to ${setBalForm.target}`)}>
+              Set balance
             </Button>
           </Field>
         )}

@@ -52,7 +52,7 @@ function openStripeCheckout() {
     var amount = input ? parseFloat(String(input.value).replace(/[^0-9.]/g, '')) : NaN;
 
     if (!amount || isNaN(amount) || amount <= 0) {
-        alert(T('Enter a deposit amount before continuing to payment.',
+        VTToast.warning('Missing Amount', T('Enter a deposit amount before continuing to payment.',
                 'Saisissez un montant de dépôt avant de continuer vers le paiement.',
                 'Introduce un importe de depósito antes de continuar al pago.'));
         if (input) { input.focus(); input.select(); }
@@ -60,6 +60,19 @@ function openStripeCheckout() {
     }
 
     var currency = (typeof getFiatCurrency === 'function') ? getFiatCurrency() : 'CAD';
+
+    // Hand the signed-in user's contact details to the hosted checkout so it can
+    // prefill them. Kept in sessionStorage rather than the query string — this
+    // is personal data and has no business being in a URL.
+    try {
+        var u = window.VTData && VTData.user;
+        if (u) {
+            sessionStorage.setItem('vt_checkout_contact', JSON.stringify({
+                email: u.email || '', phone: u.phone || ''
+            }));
+        }
+    } catch (e) { /* private mode — checkout falls back to /api/auth/me */ }
+
     window.location.href = 'checkout.html?amount=' + encodeURIComponent(amount.toFixed(2))
         + '&currency=' + encodeURIComponent(currency);
 }
@@ -75,7 +88,7 @@ function openCheckoutModal() {
     var amount = input ? parseFloat(String(input.value).replace(/[^0-9.]/g, '')) : NaN;
 
     if (!amount || isNaN(amount) || amount <= 0) {
-        alert(T('Enter a deposit amount before continuing to payment.',
+        VTToast.warning('Missing Amount', T('Enter a deposit amount before continuing to payment.',
                 'Saisissez un montant de dépôt avant de continuer vers le paiement.',
                 'Introduce un importe de depósito antes de continuar al pago.'));
         if (input) { input.focus(); input.select(); }

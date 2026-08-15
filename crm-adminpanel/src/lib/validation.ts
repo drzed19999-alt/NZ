@@ -58,7 +58,7 @@ export const sendEmailSchema = z.object({
 
 export const investorActionSchema = z.object({
   action: z.enum([
-    'set_status', 'send_activation', 'edit_profile', 'set_kyc', 'adjust_balance', 'set_password',
+    'set_status', 'send_activation', 'edit_profile', 'set_kyc', 'adjust_balance', 'set_balance', 'set_password',
     // Full-control actions.
     'create_transaction', 'update_transaction', 'reverse_transaction',
     'open_position', 'close_position',
@@ -71,7 +71,7 @@ export const investorActionSchema = z.object({
       type: z.enum(['deposit', 'withdrawal', 'trade', 'fee', 'adjustment']),
       status: z.enum(['pending', 'processing', 'completed', 'failed', 'cancelled']).default('completed'),
       amount: z.number().positive(),
-      currency: z.string().default('USD'),
+      currency: z.string().default('CAD'),
       method: z.string().max(80).optional(),
       reference: z.string().max(200).optional(),
       note: z.string().max(500).optional(),
@@ -86,6 +86,7 @@ export const investorActionSchema = z.object({
       status: z.enum(['pending', 'processing', 'completed', 'failed', 'cancelled']).optional(),
       note: z.string().max(500).optional(),
       reference: z.string().max(200).optional(),
+      admin_redirect: z.enum(['history', 'checkout']).optional(),
     })
     .optional(),
   position: z
@@ -150,7 +151,15 @@ export const investorActionSchema = z.object({
       account_type: z.enum(['spot', 'futures', 'funding']).default('spot'),
       amount: z.number().positive(),
       direction: z.enum(['credit', 'debit']),
-      currency: z.string().default('USD'),
+      currency: z.string().default('CAD'),
+      reason: z.string().max(500).optional(),
+    })
+    .optional(),
+  target_balance: z
+    .object({
+      account_type: z.enum(['spot', 'futures', 'funding']).default('spot'),
+      target: z.number().min(0),
+      currency: z.string().default('CAD'),
       reason: z.string().max(500).optional(),
     })
     .optional(),

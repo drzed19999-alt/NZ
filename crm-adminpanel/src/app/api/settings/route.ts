@@ -1,7 +1,7 @@
 import { requirePermission } from '@/lib/auth';
 import { handleError, ok, err, getIp } from '@/lib/http';
 import { env, platformConfigured } from '@/lib/env';
-import { getEffectiveSettings, setSetting, clearSetting, isEditableKey } from '@/lib/settings';
+import { getEffectiveSettings, setSetting, clearSetting, isEditableKey, optionsFor } from '@/lib/settings';
 import { audit } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
@@ -54,6 +54,19 @@ export async function PATCH(req: Request) {
       await clearSetting(key);
       await audit(actor, 'settings.reset', { entityType: 'setting', entityId: key, ip: getIp(req) });
       return ok({ key, reset: true });
+    }
+
+    // Choice settings validate against their own option list; everything else is
+    // still a non-negative number.
+    const options = optionsFor(key);
+    if (options) {
+      const picked = String(value);
+      if (!options.some((o) => o.value === picked)) {
+        return err(400, 'validation', `Value must be one of: ${options.map((o) => o.value).join(', ')}.`);
+      }
+      await setSetting(key, picked);
+      await audit(actor, 'settings.update', { entityType: 'setting', entityId: key, data: { value: picked }, ip: getIp(req) });
+      return ok({ key, value: picked });
     }
 
     const num = Number(value);

@@ -7,7 +7,9 @@ import { getSetting } from '@/lib/settings';
 // snapshot evaluation. Thresholds are configurable via env.
 // ============================================================================
 
-type AlertType = 'large_deposit' | 'large_withdrawal' | 'dormant' | 'kyc_sla' | 'suspicious';
+type AlertType =
+  | 'large_deposit' | 'large_withdrawal' | 'dormant' | 'kyc_sla' | 'suspicious'
+  | 'checkout_waiting';
 
 interface CreateAlertInput {
   type: AlertType;
@@ -20,7 +22,7 @@ interface CreateAlertInput {
 
 export async function createAlert(input: CreateAlertInput): Promise<void> {
   const admin = createAdminClient();
-  await admin.from('alerts').insert({
+  const { error } = await admin.from('alerts').insert({
     type: input.type,
     severity: input.severity ?? 'warning',
     platform_user_id: input.platform_user_id ?? null,
@@ -28,6 +30,15 @@ export async function createAlert(input: CreateAlertInput): Promise<void> {
     title: input.title,
     data: input.data ?? {},
   });
+  // `alerts.type` is a Postgres enum. A value the database does not know about
+  // yet fails here rather than silently — say which migration is missing instead
+  // of letting the webhook look like it worked.
+  if (error) {
+    console.error(
+      `[alerts] could not create "${input.type}" alert: ${error.message}. `
+      + `If this is an unknown enum value, run: alter type alert_type add value if not exists '${input.type}';`
+    );
+  }
 }
 
 /**
@@ -48,7 +59,7 @@ export async function evaluateTransactionEvent(evt: {
       type: 'large_deposit',
       severity: 'warning',
       platform_user_id: evt.user_id,
-      title: `Large deposit: ${evt.amount.toLocaleString()} ${evt.currency ?? 'USD'}`,
+      title: `Large deposit: ${evt.amount.toLocaleString()} ${evt.currency ?? 'CAD'}`,
       data: evt,
     });
   } else if (evt.type === 'withdrawal') {
@@ -56,10 +67,42 @@ export async function evaluateTransactionEvent(evt: {
       type: 'large_withdrawal',
       severity: 'critical',
       platform_user_id: evt.user_id,
-      title: `Large withdrawal: ${evt.amount.toLocaleString()} ${evt.currency ?? 'USD'}`,
+      title: `Large withdrawal: ${evt.amount.toLocaleString()} ${evt.currency ?? 'CAD'}`,
       data: evt,
     });
   }
+}
+
+/**
+ * A card deposit lands `pending` and the customer is held on the checkout
+ * processing screen until an admin redirects them. Amount is irrelevant here —
+ * any held deposit is a real person waiting — so this ignores the large-txn
+ * threshold and fires every time.
+ *
+ * Returns true when the customer is actually being held (i.e. an admin needs to
+ * act), so the caller can decide whether to auto-release them.
+ */
+export async function evaluateCheckoutWaiting(evt: {
+  user_id: string;
+  type: string;
+  status?: string;
+  method?: string;
+  amount: number;
+  currency?: string;
+  id?: string;
+}): Promise<boolean> {
+  const held =
+    evt.type === 'deposit' && evt.status === 'pending' && evt.method === 'card';
+  if (!held) return false;
+
+  await createAlert({
+    type: 'checkout_waiting',
+    severity: 'critical',
+    platform_user_id: evt.user_id,
+    title: `Customer waiting at checkout: ${evt.amount.toLocaleString()} ${evt.currency ?? 'CAD'}`,
+    data: evt,
+  });
+  return true;
 }
 
 export async function evaluateKycEvent(evt: { user_id: string; status: string; level?: number }): Promise<void> {

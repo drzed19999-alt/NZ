@@ -133,7 +133,7 @@ var viewsContainer = {
                     <div style="font-size:16px; font-weight:800; color:var(--text-dark);">Institutional API Keys</div>
                     <div style="font-size:11px; color:var(--text-muted);">Manage high-frequency trading API keys with IP whitelist protection.</div>
                 </div>
-                <button class="btn-deposit-top" onclick="alert('⚡ Institutional API Key Dialog Triggered')">+ Create New API Key</button>
+                <button class="btn-deposit-top" onclick="VTToast.info('API Key', 'New institutional API key dialog triggered.')">+ Create New API Key</button>
             </div>
             
             <div class="table-responsive-wrapper">
@@ -155,7 +155,7 @@ var viewsContainer = {
                             <td><span class="tx-status-pill tx-status-completed">Read & Trade</span></td>
                             <td style="font-family:'JetBrains Mono',monospace;">185.220.101.4</td>
                             <td><span class="change-pill pos">Active</span></td>
-                            <td><button class="btn-trade-row" style="background:#fee2e2; color:#ef4444;" onclick="alert('Revoked API Key')">Revoke</button></td>
+                            <td><button class="btn-trade-row" style="background:#fee2e2; color:#ef4444;" onclick="VTToast.warning('API Key Revoked', 'This key has been permanently revoked.')">Revoke</button></td>
                         </tr>
                         <tr>
                             <td style="font-weight:700;">MarketMaker-Arbitrum</td>
@@ -163,7 +163,7 @@ var viewsContainer = {
                             <td><span class="tx-status-pill tx-status-completed">Futures Only</span></td>
                             <td style="font-family:'JetBrains Mono',monospace;">82.165.92.14</td>
                             <td><span class="change-pill pos">Active</span></td>
-                            <td><button class="btn-trade-row" style="background:#fee2e2; color:#ef4444;" onclick="alert('Revoked API Key')">Revoke</button></td>
+                            <td><button class="btn-trade-row" style="background:#fee2e2; color:#ef4444;" onclick="VTToast.warning('API Key Revoked', 'This key has been permanently revoked.')">Revoke</button></td>
                         </tr>
                     </tbody>
                 </table>
@@ -198,7 +198,7 @@ var viewsContainer = {
                             <td style="font-family:'JetBrains Mono',monospace;">82.165.92.14</td>
                             <td>Frankfurt, DE 🇩🇪</td>
                             <td style="color:var(--text-muted);">2 hours ago</td>
-                            <td><button class="btn-trade-row" style="background:#fee2e2; color:#ef4444;" onclick="alert('Session Revoked')">Revoke Session</button></td>
+                            <td><button class="btn-trade-row" style="background:#fee2e2; color:#ef4444;" onclick="VTToast.warning('Session Revoked', 'Device session has been terminated.')">Revoke Session</button></td>
                         </tr>
                     </tbody>
                 </table>
@@ -596,13 +596,13 @@ var viewsContainer = {
                                     <span class="asset-coin" style="background:#26a17b">₮</span><span class="asset-ticker">USDT</span><span class="asset-name" id="withdrawAssetQty">0.00</span>
                                 </div>
                                 <div class="asset-chip" onclick="selectWithdrawAsset('BTC', this)">
-                                    <span class="asset-coin" style="background:#f7931a">₿</span><span class="asset-ticker">BTC</span><span class="asset-name">2.1004</span>
+                                    <span class="asset-coin" style="background:#f7931a">₿</span><span class="asset-ticker">BTC</span><span class="asset-name">—</span>
                                 </div>
                                 <div class="asset-chip" onclick="selectWithdrawAsset('ETH', this)">
-                                    <span class="asset-coin" style="background:#627eea">Ξ</span><span class="asset-ticker">ETH</span><span class="asset-name">14.5000</span>
+                                    <span class="asset-coin" style="background:#627eea">Ξ</span><span class="asset-ticker">ETH</span><span class="asset-name">—</span>
                                 </div>
                                 <div class="asset-chip" onclick="selectWithdrawAsset('SOL', this)">
-                                    <span class="asset-coin" style="background:#9945ff">◎</span><span class="asset-ticker">SOL</span><span class="asset-name">320.00</span>
+                                    <span class="asset-coin" style="background:#9945ff">◎</span><span class="asset-ticker">SOL</span><span class="asset-name">—</span>
                                 </div>
                             </div>
 
@@ -705,6 +705,7 @@ var viewsContainer = {
                                 <div class="field-block">
                                     <label class="funds-label" data-i18n="wireCurrency">Currency</label>
                                     <select class="form-select-custom" id="wireCurrency">
+                                        <option value="CAD">CAD — Canadian Dollar</option>
                                         <option value="USD">USD — US Dollar</option>
                                         <option value="EUR">EUR — Euro</option>
                                         <option value="GBP">GBP — British Pound</option>
@@ -1061,9 +1062,9 @@ var viewsContainer = {
                         </div>
                         <div class="equity-wrap"><canvas id="botEquityChart"></canvas></div>
                         <div class="equity-legend">
-                            <span><span data-i18n="botStartingCap">Starting capital</span> <b id="eqStart">$50,000</b></span>
-                            <span><span data-i18n="botCurrentEquity">Current equity</span> <b id="eqNow">$50,000</b></span>
-                            <span><span data-i18n="botPeak">Peak</span> <b id="eqPeak">$50,000</b></span>
+                            <span><span data-i18n="botStartingCap">Starting capital</span> <b id="eqStart">—</b></span>
+                            <span><span data-i18n="botCurrentEquity">Current equity</span> <b id="eqNow">—</b></span>
+                            <span><span data-i18n="botPeak">Peak</span> <b id="eqPeak">—</b></span>
                             <span><span data-i18n="botMaxDd">Max drawdown</span> <b id="eqMaxDd">0.00%</b></span>
                         </div>
                     </div>
@@ -1124,7 +1125,7 @@ var viewsContainer = {
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>
                                 <span data-i18n="botBacktest">Strategy backtest</span>
                             </div>
-                            <span class="bot-card-hint" id="btWindow">Jan 2024 — Aug 2026 · 4h candles</span>
+                            <span class="bot-card-hint" id="btWindow">— · 4h candles</span>
                         </div>
                         <div class="bt-grid">
                             <div class="bt-cell"><div class="bt-lbl" data-i18n="btReturn">Total return</div><div class="bt-val up" id="btReturn">+0%</div></div>

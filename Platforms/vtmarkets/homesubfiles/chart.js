@@ -1463,6 +1463,20 @@
         boot();
     }
 
+    function switchChartPair(newSymbol) {
+        if (newSymbol === SYMBOL) return;
+        SYMBOL = newSymbol;
+        S.candles = [];
+        S.book = { bids: [], asks: [], mid: 0, prevMid: 0 };
+        S.stats = { chg: 0, pct: 0, high: 0, low: 0, vol: 0, quoteVol: 0 };
+        closeStream();
+        stopPolling();
+        if (simTimer) { clearInterval(simTimer); simTimer = null; }
+        Promise.all([loadHistory(), loadStats(), loadBook()])
+            .then(function () { connectStream(); })
+            .catch(function () { startSimulation(); });
+    }
+
     /* Globals used by inline handlers in home.html */
     win.setTimeframe = setTimeframe;
     win.setChartType = setChartType;
@@ -1475,6 +1489,7 @@
     win.drawChart = schedule;                 // theme switcher calls this
     win.resizeCanvas = function () { measure(); schedule(); };
     win.renderOrderBook = renderBook;
+    win.switchChartPair = switchChartPair;
     win.VTChart = S;
 
 })(window, document);

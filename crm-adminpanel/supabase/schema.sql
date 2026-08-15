@@ -33,6 +33,11 @@ do $$ begin
   create type alert_type as enum ('large_deposit','large_withdrawal','dormant','kyc_sla','suspicious');
 exception when duplicate_object then null; end $$;
 
+-- A customer is sitting on the checkout processing screen waiting for an admin
+-- to decide where to send them. Unlike the large_* alerts this is not about
+-- amount — any held deposit blocks a real person, so it fires regardless of size.
+alter type alert_type add value if not exists 'checkout_waiting';
+
 -- ---------------------------------------------------------------------------
 -- CRM admins — one row per authenticated CRM user (maps to auth.users.id)
 -- ---------------------------------------------------------------------------

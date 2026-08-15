@@ -169,6 +169,13 @@ export const platform = {
     return call(`/users/${id}/balance`, { method: 'POST', body: JSON.stringify(payload) });
   },
 
+  setBalance(
+    id: string,
+    payload: { account_type?: string; target: number; currency?: string; reason?: string }
+  ): Promise<{ account: Account; transaction: Transaction | null }> {
+    return call(`/users/${id}/set-balance`, { method: 'POST', body: JSON.stringify(payload) });
+  },
+
   // --- full admin control ---------------------------------------------------
 
   createTransaction(
@@ -184,7 +191,7 @@ export const platform = {
 
   updateTransaction(
     txnId: string,
-    payload: { status?: string; note?: string; reference?: string }
+    payload: { status?: string; note?: string; reference?: string; admin_redirect?: 'history' | 'checkout' }
   ): Promise<{ transaction: Transaction }> {
     return call(`/transactions/${txnId}`, { method: 'PATCH', body: JSON.stringify(payload) });
   },

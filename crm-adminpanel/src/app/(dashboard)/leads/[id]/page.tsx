@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import { dateTime, timeAgo } from '@/lib/format';
+import { generatePassword } from '@/lib/password';
 import { can } from '@/lib/rbac';
 import {
   BackLink, Button, ErrorText, Field, HistoryItem, InsetBox, Modal, Notice,
@@ -12,16 +13,6 @@ import {
 } from '@/components/ui';
 
 const STATUSES = ['new', 'contacted', 'qualified', 'proposal', 'converted', 'lost', 'unresponsive'];
-
-/** Readable but strong temporary password. */
-function generatePassword() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
-  let out = '';
-  const buf = new Uint32Array(14);
-  crypto.getRandomValues(buf);
-  buf.forEach((n) => (out += chars[n % chars.length]));
-  return out + '!7';
-}
 
 export default function LeadDetailPage() {
   const { id } = useParams<{ id: string }>();

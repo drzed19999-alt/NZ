@@ -5,10 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
     <title>Payment confirmed — VT Markets</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="checkoutfiles/flow.css?v=1">
+    <link rel="stylesheet" href="checkoutfiles/flow.css?v=2">
 </head>
 <body>
 
@@ -68,12 +69,13 @@
 
     <footer class="flow-foot" id="flowFoot"></footer>
 
-    <script src="checkoutfiles/flow.js?v=1"></script>
+    <script src="checkoutfiles/flow.js?v=2"></script>
     <script>
     (function () {
         'use strict';
 
         var order = VTFlow.requireOrder();
+        if (!order) { VTFlow.bounceToDeposit(); return; }
 
         VTFlow.paintChrome(3);
 
@@ -105,14 +107,9 @@
         set('rDate', new Date(order.completed || Date.now()).toLocaleString());
         set('rTotal', amount);
 
-        // Hand the credit back to the platform so the balance reflects it.
-        // A preview order must never move a real balance.
-        try {
-            if (order.preview) throw new Error('preview');
-            localStorage.setItem('vt_pending_credit', JSON.stringify({
-                amount: order.amount, currency: order.currency, ref: order.ref, at: Date.now()
-            }));
-        } catch (e) { /* storage unavailable — the balance simply will not move */ }
+        // The balance is never credited from this page. A deposit is recorded
+        // as `pending` on the server and only moves the balance once an admin
+        // marks it completed in the CRM.
 
         document.getElementById('receiptBtn').addEventListener('click', function () {
             var lines = [

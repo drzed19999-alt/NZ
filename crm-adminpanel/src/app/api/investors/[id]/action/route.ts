@@ -52,6 +52,12 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         result = await platform.adjustBalance(params.id, input.balance);
         break;
 
+      case 'set_balance':
+        need('investor.funds');
+        if (!input.target_balance) return err(400, 'bad_request', 'target_balance is required for set_balance');
+        result = await platform.setBalance(params.id, input.target_balance);
+        break;
+
       case 'set_password':
         need('investor.edit');
         if (!input.credentials) return err(400, 'bad_request', 'credentials is required for set_password');

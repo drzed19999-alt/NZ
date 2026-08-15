@@ -3,15 +3,16 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import {
-  Button, CodeBlock, ConfiguredPill, Field, Notice, PageHeader, PageLoader, Panel, TextInput,
+  Button, CodeBlock, ConfiguredPill, Field, Notice, PageHeader, PageLoader, Panel, Select, TextInput,
 } from '@/components/ui';
 
 interface EffectiveSetting {
   key: string;
   label: string;
   help: string;
-  type: 'number';
-  value: number;
+  type: 'number' | 'select';
+  options?: { value: string; label: string }[];
+  value: number | string;
   source: 'db' | 'env';
 }
 
@@ -78,8 +79,13 @@ export default function SettingsPage() {
                 <div className="muted text-xs">{s.help}</div>
                 <code className="muted text-[11px]">{s.key} · source: {s.source}</code>
               </div>
-              <TextInput className="max-w-[140px]" type="number" value={drafts[s.key] ?? ''}
-                onChange={(e) => setDrafts({ ...drafts, [s.key]: e.target.value })} />
+              {s.type === 'select' ? (
+                <Select className="max-w-[300px]" options={s.options ?? []} value={drafts[s.key] ?? ''}
+                  onChange={(e) => setDrafts({ ...drafts, [s.key]: e.target.value })} />
+              ) : (
+                <TextInput className="max-w-[140px]" type="number" value={drafts[s.key] ?? ''}
+                  onChange={(e) => setDrafts({ ...drafts, [s.key]: e.target.value })} />
+              )}
               <Button variant="primary" busy={savingKey === s.key} busyLabel="Saving…"
                 disabled={drafts[s.key] === String(s.value)}
                 onClick={() => save(s.key, drafts[s.key])}>Save</Button>

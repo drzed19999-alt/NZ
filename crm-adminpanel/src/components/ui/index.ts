@@ -17,4 +17,6 @@ export { Modal } from './Modal';
 export { BackLink, FilterBar, PageHeader } from './PageHeader';
 export { Panel, PanelLink } from './Panel';
 export { StatCard, StatGrid, StatStrip, type StatItem } from './Stat';
+export { TabPanel, Tabs, type TabItem } from './Tabs';
 export { FeedRow, HistoryItem, TimelineItem } from './Timeline';
+export { ToastProvider, useToast } from './Toast';

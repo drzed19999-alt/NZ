@@ -3,7 +3,9 @@ import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { env } from '@/lib/env';
 import { touchCacheFromEvent } from '@/lib/investors';
-import { evaluateTransactionEvent, evaluateKycEvent } from '@/lib/alerts';
+import { evaluateTransactionEvent, evaluateKycEvent, evaluateCheckoutWaiting } from '@/lib/alerts';
+import { getSetting } from '@/lib/settings';
+import { platform } from '@/lib/crypto-platform/client';
 import { rateLimit } from '@/lib/rate-limit';
 import { getIp } from '@/lib/http';
 
@@ -76,6 +78,24 @@ export async function POST(req: Request) {
       await evaluateTransactionEvent({
         user_id: userId!, type: data.type, amount: Number(data.amount), currency: data.currency,
       });
+
+      // A card deposit holds the customer on the checkout processing screen.
+      // Raise it regardless of amount, then honour the configured policy: either
+      // leave them for an admin to route, or release them straight to history.
+      const held = await evaluateCheckoutWaiting({
+        user_id: userId!, type: data.type, status: data.status, method: data.method,
+        amount: Number(data.amount), currency: data.currency, id: data.id,
+      });
+
+      if (held && data.id) {
+        const mode = await getSetting<string>('checkout.redirect_mode');
+        if (mode === 'auto_history') {
+          // Goes through the integration API, never the platform DB directly.
+          await platform
+            .updateTransaction(data.id, { admin_redirect: 'history' })
+            .catch((e: Error) => console.error('[platform webhook] auto-release failed:', e.message));
+        }
+      }
     } else if (event === 'kyc.updated') {
       await evaluateKycEvent({ user_id: userId!, status: data.status, level: data.level });
     }

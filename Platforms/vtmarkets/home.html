@@ -4,13 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VT Markets - Institutional Crypto Trading Platform</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     
     <!-- Modular Subfile Stylesheets (bump ?v= after editing to bust the browser cache) -->
-    <link rel="stylesheet" href="homesubfiles/styles.css?v=21">
+    <link rel="stylesheet" href="homesubfiles/styles.css?v=23">
     <link rel="stylesheet" href="homesubfiles/responsive.css?v=21">
     <link rel="stylesheet" href="homesubfiles/chart.css?v=21">
     <link rel="stylesheet" href="homesubfiles/funds.css?v=21">
@@ -149,7 +150,16 @@
 
             <div class="header-right-actions">
                 <a href="javascript:void(0)" onclick="switchPageView('account')" class="btn-webtrader" title="Account balance">
-                    <span class="nav-balance-val" id="navBalanceVal">$0.00</span>
+                    <svg class="nav-balance-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2"></path>
+                        <path d="M3 7v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2H5a2 2 0 0 1-2-2z"></path>
+                        <circle cx="16.5" cy="13.5" r="1.2" fill="currentColor" stroke="none"></circle>
+                    </svg>
+                    <span class="nav-balance-meta">
+                        <span class="nav-balance-label" data-i18n="navBalance">Balance</span>
+                        <span class="nav-balance-val" id="navBalanceVal">$0.00</span>
+                    </span>
                 </a>
                 <a href="javascript:void(0)" onclick="switchPageView('deposit')" class="btn-deposit-top" data-i18n="deposit">Deposit</a>
 
@@ -159,7 +169,7 @@
                 </div>
 
                 <!-- Language Dropdown -->
-                <div class="dropdown-relative">
+                <div class="dropdown-relative lang-toggle-wrap">
                     <div class="icon-btn" id="langBtn" title="Language" onclick="toggleHeaderDropdown('langDropdown', event)">
                         <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
                     </div>
@@ -244,37 +254,41 @@
                         <div class="pro-chart-top-bar">
                             <div class="pair-info-left">
                                 <span class="star-icon" title="Favorite">⭐</span>
-                                <div class="crypto-icon">₿</div>
-                                <div class="pair-symbol-text">
-                                    <span class="pair-name">BTC/USDT</span>
-                                    <span class="pair-sub-label" data-i18n="btcPriceLabel">Bitcoin Price &rsaquo;</span>
+                                <div class="crypto-icon" id="chartPairIcon">₿</div>
+                                <div class="pair-symbol-text pair-selector-trigger" onclick="toggleChartPairDropdown(event)">
+                                    <span class="pair-name" id="chartPairName">BTC/USDT</span>
+                                    <span class="pair-sub-label" id="chartPairSubLabel">Bitcoin Price <svg style="display:inline;vertical-align:middle;" width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg></span>
+                                </div>
+                                <div class="chart-pair-dropdown" id="chartPairDropdown">
+                                    <input type="text" class="chart-pair-search" placeholder="Search instrument..." oninput="filterChartPairs(this.value)" autocomplete="off" />
+                                    <div class="chart-pair-list" id="chartPairList"></div>
                                 </div>
                                 <div class="price-hero-block">
-                                    <div class="hero-price-val" id="livePrice">$63,498.00</div>
-                                    <div class="hero-price-sub" id="livePriceSub">$63,498.00</div>
+                                    <div class="hero-price-val" id="livePrice">—</div>
+                                    <div class="hero-price-sub" id="livePriceSub">—</div>
                                 </div>
                             </div>
                             
                             <div class="pair-metrics-right">
                                 <div class="metric-box">
                                     <span class="m-label" data-i18n="24hChg">24h Chg</span>
-                                    <span class="m-val pos" id="metricChg">+32.00 +0.05%</span>
+                                    <span class="m-val" id="metricChg">—</span>
                                 </div>
                                 <div class="metric-box">
                                     <span class="m-label" data-i18n="high24h">24h High</span>
-                                    <span class="m-val" id="metricHigh">64,500.00</span>
+                                    <span class="m-val" id="metricHigh">—</span>
                                 </div>
                                 <div class="metric-box">
                                     <span class="m-label" data-i18n="low24h">24h Low</span>
-                                    <span class="m-val" id="metricLow">63,238.00</span>
+                                    <span class="m-val" id="metricLow">—</span>
                                 </div>
                                 <div class="metric-box">
                                     <span class="m-label" data-i18n="vol24hBtc">24h Vol(BTC)</span>
-                                    <span class="m-val" id="metricVolBtc">13,306.94</span>
+                                    <span class="m-val" id="metricVolBtc">—</span>
                                 </div>
                                 <div class="metric-box">
                                     <span class="m-label" data-i18n="vol24hUsdt">24h Vol(USDT)</span>
-                                    <span class="m-val" id="metricVolUsdt">848,819,649.82</span>
+                                    <span class="m-val" id="metricVolUsdt">—</span>
                                 </div>
                                 <div class="metric-box hide-mobile">
                                     <span class="m-label" data-i18n="tokenTags">Token Tags</span>
@@ -510,13 +524,15 @@
                             </div>
                         </div>
                     </div>
+                    <!-- Reserve figures are an audited disclosure: they come from the
+                         attestation endpoint or they show as unavailable. Never a literal. -->
                     <div class="por-stats">
                         <div class="por-stat-item">
-                            <div class="por-stat-val">108.4%</div>
+                            <div class="por-stat-val" id="porReserveRatio">—</div>
                             <div class="por-stat-label" data-i18n="reserveRatio">Reserve Ratio</div>
                         </div>
                         <div class="por-stat-item">
-                            <div class="por-stat-val">$1.42B</div>
+                            <div class="por-stat-val" id="porTotalCollateral">—</div>
                             <div class="por-stat-label" data-i18n="totalCollateral">Total Collateral</div>
                         </div>
                     </div>
@@ -571,7 +587,12 @@
                 <!-- MARKETS TABLE SECTION WITH SEARCH -->
                 <section class="markets-section">
                     <div class="markets-header-row">
-                        <div class="section-title" data-i18n="marketsOverviewTitle">Markets Overview</div>
+                        <div class="section-title">
+                            <span data-i18n="marketsOverviewTitle">Markets Overview</span>
+                            <!-- Crypto is a real Binance feed; every other tab is a
+                                 simulated tick. Say which one the user is looking at. -->
+                            <span class="feed-status" id="liveFeedStatus">…</span>
+                        </div>
                         <div class="markets-search-box">
                             <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                             <input type="text" data-i18n-placeholder="searchMarketsPlaceholder" placeholder="Search markets (BTC, ETH, Forex...)" oninput="searchMarkets(this.value)">
@@ -614,28 +635,10 @@
                         <div class="section-title" data-i18n="newsTitle">Market News & Analysis</div>
                         <a href="javascript:void(0)" class="history-link">&rarr;</a>
                     </div>
-                    <div class="news-grid">
-                        <div class="news-card">
-                            <div class="news-icon-3d">📢</div>
-                            <div>
-                                <div class="news-title">GBP/JPY intraday : the RSI is overbought</div>
-                                <div class="news-desc">GBP/JPY intraday : the RSI is overbought<br>11/08/2026 02:30:03</div>
-                            </div>
-                        </div>
-                        <div class="news-card">
-                            <div class="news-icon-3d">🪙</div>
-                            <div>
-                                <div class="news-title">Gold intraday : The upside prevails as long as 4,348 is support</div>
-                                <div class="news-desc">Gold intraday : The upside prevails as long as 4,348 is support<br>11/08/2026 02:30:03</div>
-                            </div>
-                        </div>
-                        <div class="news-card">
-                            <div class="news-icon-3d">🎯</div>
-                            <div>
-                                <div class="news-title">USD/JPY intraday : Towards 159.68</div>
-                                <div class="news-desc">USD/JPY intraday : Towards 159.68<br>11/08/2026 02:30:03</div>
-                            </div>
-                        </div>
+                    <!-- Filled by VTHydrate.news() from the research feed. Empty until
+                         there is a feed to read — no invented headlines. -->
+                    <div class="news-grid" id="newsGrid">
+                        <div class="empty-state-note" data-i18n="newsEmpty">No market commentary published yet.</div>
                     </div>
                 </section>
 
@@ -651,60 +654,11 @@
                         <span data-i18n="copyTradingDesc">VT Markets makes copy trading effortless. Follow verified master traders, replicate their strategies in real-time with automated risk parameters, and grow your portfolio without needing market expertise.</span>
                     </div>
 
-                    <div class="traders-grid">
-                        <!-- 2nd Place -->
-                        <div class="trader-card">
-                            <div class="avatar-wrap">
-                                <div class="trader-avatar" style="background:#f1f5f9; display:flex; align-items:center; justify-content:center; font-weight:800; color:#475569;">IG</div>
-                                <div class="rank-badge rank-2">2nd</div>
-                            </div>
-                            <div class="trader-name">IrukitoGold <span class="verified-badge" title="Verified Trader">✓</span></div>
-                            <div class="trader-copiers">👤 1,482 <span data-i18n="copiers">Copiers</span> &bull; AUM $1.2M</div>
-                            <div class="return-label" data-i18n="return1Year">Return (1Year)</div>
-                            <div class="return-value">+314.20%</div>
-                            <div class="stats-row">
-                                <span><span data-i18n="winRate">Win Rate</span> <strong>68.4%</strong></span>
-                                <span><span data-i18n="maxDD">Max DD</span> <strong style="color:#10b981;">-6.2%</strong></span>
-                                <span><span data-i18n="risk">Risk</span> <span class="risk-pill">2</span></span>
-                            </div>
-                            <button class="btn-view-trader" data-i18n="copyStrategyBtn">Copy Strategy</button>
-                        </div>
-
-                        <!-- 1st Place -->
-                        <div class="trader-card" style="border-color:#bfdbfe; background:var(--primary-light-blue);">
-                            <div class="avatar-wrap">
-                                <div class="trader-avatar" style="background:#2563eb; color:white; display:flex; align-items:center; justify-content:center; font-weight:800;">KC</div>
-                                <div class="rank-badge rank-1">1st</div>
-                            </div>
-                            <div class="trader-name">KCNV Master <span class="verified-badge" title="Verified Pro Strategy">✓</span></div>
-                            <div class="trader-copiers">👤 3,920 <span data-i18n="copiers">Copiers</span> &bull; AUM $4.8M</div>
-                            <div class="return-label" data-i18n="return1Year">Return (1Year)</div>
-                            <div class="return-value">+482.50%</div>
-                            <div class="stats-row">
-                                <span><span data-i18n="winRate">Win Rate</span> <strong>74.2%</strong></span>
-                                <span><span data-i18n="maxDD">Max DD</span> <strong style="color:#10b981;">-8.4%</strong></span>
-                                <span><span data-i18n="risk">Risk</span> <span class="risk-pill">3</span></span>
-                            </div>
-                            <button class="btn-view-trader" style="background:#2563eb; color:white; border:none;" data-i18n="copyStrategyBtn">Copy Strategy</button>
-                        </div>
-
-                        <!-- 3rd Place -->
-                        <div class="trader-card">
-                            <div class="avatar-wrap">
-                                <div class="trader-avatar" style="background:#f1f5f9; display:flex; align-items:center; justify-content:center; font-weight:800; color:#475569;">LS</div>
-                                <div class="rank-badge rank-3">3rd</div>
-                            </div>
-                            <div class="trader-name">LiaoShengming <span class="verified-badge" title="Verified Trader">✓</span></div>
-                            <div class="trader-copiers">👤 924 <span data-i18n="copiers">Copiers</span> &bull; AUM $840K</div>
-                            <div class="return-label" data-i18n="return1Year">Return (1Year)</div>
-                            <div class="return-value">+185.90%</div>
-                            <div class="stats-row">
-                                <span><span data-i18n="winRate">Win Rate</span> <strong>64.8%</strong></span>
-                                <span><span data-i18n="maxDD">Max DD</span> <strong style="color:#ef4444;">-12.1%</strong></span>
-                                <span><span data-i18n="risk">Risk</span> <span class="risk-pill" style="background:#fee2e2; color:#b91c1c;">4</span></span>
-                            </div>
-                            <button class="btn-view-trader" data-i18n="copyStrategyBtn">Copy Strategy</button>
-                        </div>
+                    <!-- Filled by VTHydrate.leaderboard() from the copy-trading API.
+                         Track records are regulated performance claims, so nothing is
+                         rendered until the API returns real verified figures. -->
+                    <div class="traders-grid" id="tradersGrid">
+                        <div class="empty-state-note" data-i18n="leaderboardEmpty">No verified master traders available yet.</div>
                     </div>
                 </section>
             </div>
@@ -749,14 +703,14 @@
     </div>
 
     <!-- MODULAR SUBFILES JS SCRIPTS -->
-    <script src="homesubfiles/i18n.js?v=21"></script>
+    <script src="homesubfiles/i18n.js?v=23"></script>
     <script src="homesubfiles/chart.js?v=22"></script>
     <script src="homesubfiles/markets.js?v=21"></script>
-    <script src="homesubfiles/views.js?v=22"></script>
-    <script src="homesubfiles/checkout.js?v=22"></script>
+    <script src="homesubfiles/views.js?v=23"></script>
+    <script src="homesubfiles/checkout.js?v=23"></script>
     <script src="homesubfiles/protrader.js?v=22"></script>
-    <script src="homesubfiles/app.js?v=21"></script>
+    <script src="homesubfiles/app.js?v=23"></script>
     <!-- Live backend integration: auth guard + hydrate balances/KYC/transactions from the API -->
-    <script src="homesubfiles/api-client.js?v=2"></script>
+    <script src="homesubfiles/api-client.js?v=5"></script>
 </body>
 </html>

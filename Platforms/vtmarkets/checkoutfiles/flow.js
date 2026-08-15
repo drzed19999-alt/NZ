@@ -29,10 +29,7 @@ var VTFlow = (function () {
             trust2: '256-bit TLS encryption end to end',
             trust3: 'PCI-DSS Level 1 certified processor',
             footer: 'VT Markets never stores your full card number. This page is a prototype and does not process real payments.',
-            expired: 'Your checkout session expired. Start the deposit again.',
-            previewTitle: 'Preview mode',
-            previewBody: 'No active checkout session, so this page is showing a sample order. Start from Deposit funds for a real payment.',
-            previewCta: 'Go to Deposit funds'
+            expired: 'Your checkout session expired. Start the deposit again.'
         },
         fr: {
             step1: 'Paiement', step2: 'Vérification', step3: 'Confirmation',
@@ -43,10 +40,7 @@ var VTFlow = (function () {
             trust2: 'Chiffrement TLS 256 bits de bout en bout',
             trust3: 'Prestataire certifié PCI-DSS niveau 1',
             footer: "VT Markets ne conserve jamais votre numéro de carte complet. Cette page est un prototype et ne traite aucun paiement réel.",
-            expired: 'Votre session de paiement a expiré. Recommencez le dépôt.',
-            previewTitle: 'Mode aperçu',
-            previewBody: "Aucune session de paiement active : cette page affiche une commande d'exemple. Partez de Déposer des fonds pour un paiement réel.",
-            previewCta: 'Aller au dépôt'
+            expired: 'Votre session de paiement a expiré. Recommencez le dépôt.'
         },
         es: {
             step1: 'Pago', step2: 'Verificación', step3: 'Confirmación',
@@ -57,10 +51,7 @@ var VTFlow = (function () {
             trust2: 'Cifrado TLS de 256 bits de extremo a extremo',
             trust3: 'Procesador certificado PCI-DSS nivel 1',
             footer: 'VT Markets nunca almacena su número de tarjeta completo. Esta página es un prototipo y no procesa pagos reales.',
-            expired: 'Su sesión de pago ha caducado. Inicie el depósito de nuevo.',
-            previewTitle: 'Modo vista previa',
-            previewBody: 'No hay sesión de pago activa, así que esta página muestra un pedido de ejemplo. Empieza desde Depositar fondos para un pago real.',
-            previewCta: 'Ir al depósito'
+            expired: 'Su sesión de pago ha caducado. Inicie el depósito de nuevo.'
         }
     };
 
@@ -84,27 +75,11 @@ var VTFlow = (function () {
 
     function clear() { sessionStorage.removeItem(KEY); }
 
-    // Opening any of these pages directly is a legitimate thing to do — for a
-    // design review, or to share a single screen. Rather than bouncing the user
-    // back to the platform, fall back to a clearly-labelled sample order.
-    function sampleOrder() {
-        return {
-            amount: 250,
-            currency: 'CAD',
-            ref: 'VTM-PREVIEW',
-            created: Date.now(),
-            card4: '4242',
-            brand: 'visa',
-            email: 'johndoe@vtmarkets.com',
-            phone: '+15145550142',
-            authorised: true,
-            authCode: '884921',
-            completed: Date.now(),
-            preview: true
-        };
-    }
-
-    // Seed from ?amount=&currency= on the entry page, otherwise reuse the session
+    // Seed from ?amount=&currency= on the entry page, otherwise reuse the
+    // session. Returns null when there is neither — the caller sends the user
+    // back to Deposit funds. There is deliberately no sample/preview order:
+    // showing a placeholder amount reads as a real order and is worse than
+    // bouncing to the form.
     function init() {
         var q = new URLSearchParams(location.search);
         var amount = parseFloat(q.get('amount'));
@@ -118,30 +93,17 @@ var VTFlow = (function () {
                 created: Date.now()
             });
         }
-        return read() || write(sampleOrder());
+        return read();
     }
 
-    // Never redirects. A missing order means the page was opened on its own.
+    // May be null — the page was opened without an active checkout session.
     function requireOrder() {
-        return read() || write(sampleOrder());
+        return read();
     }
 
-    function paintPreviewNotice(order) {
-        if (!order || !order.preview) return;
-        if (document.getElementById('flowPreviewBar')) return;
-
-        var bar = document.createElement('div');
-        bar.id = 'flowPreviewBar';
-        bar.className = 'flow-preview';
-        bar.innerHTML =
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">'
-            + '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>'
-            + '<div><strong>' + t('previewTitle') + '</strong><span>' + t('previewBody') + '</span></div>'
-            + '<a href="home.html">' + t('previewCta') + '</a>';
-
-        var steps = document.querySelector('.flow-steps');
-        if (steps && steps.parentNode) steps.parentNode.insertBefore(bar, steps);
-        else document.body.insertBefore(bar, document.body.firstChild);
+    // No order means the flow was entered out of band; start over at the form.
+    function bounceToDeposit() {
+        location.replace('home.html');
     }
 
     /* ---------- formatting ---------- */
@@ -182,8 +144,6 @@ var VTFlow = (function () {
             var dot = node.querySelector('.fstep-dot');
             if (dot) dot.textContent = (i + 1 < activeStep) ? '✓' : String(i + 1);
         });
-
-        paintPreviewNotice(read());
     }
 
     function paintSummary(order) {
@@ -209,9 +169,9 @@ var VTFlow = (function () {
 
     return {
         init: init, read: read, write: write, clear: clear,
-        requireOrder: requireOrder, sampleOrder: sampleOrder, money: money, symbol: symbol,
-        lang: lang, t: t, paintChrome: paintChrome, paintSummary: paintSummary,
-        paintPreviewNotice: paintPreviewNotice, go: go
+        requireOrder: requireOrder, bounceToDeposit: bounceToDeposit,
+        money: money, symbol: symbol,
+        lang: lang, t: t, paintChrome: paintChrome, paintSummary: paintSummary, go: go
     };
 })();
 

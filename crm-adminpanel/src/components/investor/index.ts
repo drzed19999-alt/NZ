@@ -3,6 +3,7 @@
  * server-side in /api/investors/[id]/action — the UI gate is UX only.
  */
 export { BotPanel } from './BotPanel';
+export { CheckoutWaitingBar } from './CheckoutWaitingBar';
 export { DangerZone } from './DangerZone';
 export { PaymentMethodsPanel } from './PaymentMethodsPanel';
 export { PositionsPanel } from './PositionsPanel';

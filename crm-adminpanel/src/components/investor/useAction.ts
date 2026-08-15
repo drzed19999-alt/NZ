@@ -2,14 +2,12 @@
 
 import { useState } from 'react';
 import { api } from '@/lib/api';
+import { useToast } from '@/components/ui';
 
-/**
- * Shared plumbing for every admin control on an investor: POST the action,
- * surface the message, refresh the page data. Keeps each panel to its own UI.
- */
 export function useAction(id: string, onDone: () => void) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const { success, error } = useToast();
 
   async function run(body: unknown, okMsg: string) {
     setBusy(true);
@@ -17,10 +15,12 @@ export function useAction(id: string, onDone: () => void) {
     try {
       await api.post(`/api/investors/${id}/action`, body);
       setMsg(okMsg);
+      success('Action completed', okMsg);
       onDone();
       return true;
     } catch (e: any) {
       setMsg(e.message);
+      error('Action failed', e.message);
       return false;
     } finally {
       setBusy(false);

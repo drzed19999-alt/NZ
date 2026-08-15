@@ -237,11 +237,11 @@ function executeQuickOrder() {
     var amountEl = document.getElementById('orderAmountInput');
     var amount = parseFloat(amountEl ? amountEl.value : 0) || 0;
     if (amount <= 0) {
-        alert('Please enter a valid order amount greater than 0.');
+        VTToast.warning('Invalid Amount', 'Please enter a valid order amount greater than 0.');
         return;
     }
     var sideUpper = currentOrderSide.toUpperCase();
-    alert('⚡ Order executed\n\nType: ' + sideUpper + ' BTC/USDT\nAmount: ' + amount + ' BTC\nLeverage: ' + currentLeverage + '\nStatus: Filled on the VT Markets matching engine');
+    VTToast.success('Order Executed', sideUpper + ' ' + amount + ' BTC/USDT at ' + currentLeverage + ' leverage — filled.');
 }
 
 // =============================================================
@@ -783,7 +783,7 @@ function submitWithdrawal() {
         else if (!val('wireBank')) problem = 'Enter the beneficiary bank name and address.';
         destination = val('wireBank') + ' · ' + val('wireIban');
     } else if (method === 'card') {
-        destination = 'Visa •••• 4892';
+        destination = 'Card on file';
     } else if (method === 'internal') {
         if (!val('internalUid')) problem = 'Enter the recipient UID or email.';
         destination = val('internalUid');
@@ -796,22 +796,15 @@ function submitWithdrawal() {
         else if (amount <= s.flat + amount * (s.pct / 100)) problem = 'Amount must be greater than the total fees.';
     }
 
-    if (problem) { alert(problem); return; }
+    if (problem) { VTToast.warning('Withdrawal Error', problem); return; }
 
     var fees = s.flat + amount * (s.pct / 100);
-    alert('Withdrawal queued for security review\n\n'
-        + 'Method: ' + wdText(s.cfg, 'name') + '\n'
-        + 'Amount: ' + amount.toFixed(s.dp) + ' ' + s.unit + '\n'
-        + 'Fees: ' + fees.toFixed(s.dp) + ' ' + s.unit + '\n'
-        + 'You receive: ' + (amount - fees).toFixed(s.dp) + ' ' + s.unit + '\n'
-        + 'Destination: ' + destination + '\n'
-        + 'Estimated arrival: ' + s.eta + '\n\n'
-        + 'Confirm the 2FA code sent to your device to release the transaction.');
+    VTToast.success('Withdrawal Queued', amount.toFixed(s.dp) + ' ' + s.unit + ' via ' + wdText(s.cfg, 'name') + ' — confirm the 2FA code sent to your device.', 8000);
 }
 
 // ---------- PAYMENT DETAILS ----------
 function addWhitelistAddress() {
-    alert('Add a whitelisted address\n\nNew destinations require email confirmation and are held for 24 hours before their first withdrawal.');
+    VTToast.info('Whitelist Address', 'New destinations require email confirmation and a 24-hour hold before the first withdrawal.');
 }
 
 function removeWhitelistAddress(btn) {
@@ -824,7 +817,7 @@ function removeWhitelistAddress(btn) {
 
 // ---------- TRANSACTION HISTORY ----------
 function exportStatement(format) {
-    alert('Statement export queued\n\nFormat: ' + String(format).toUpperCase() + '\nA download link will be emailed to you once the file is ready.');
+    VTToast.success('Export Queued', String(format).toUpperCase() + ' statement will be emailed when ready.');
 }
 
 // UPGRADED FUNDS INTERACTIVE HANDLERS
@@ -855,24 +848,176 @@ function searchTxHash(query) {
     console.log('[Tx History] Searching hash:', query);
 }
 
-// A completed hosted checkout leaves a credit note behind — apply it once.
-function applyPendingCredit() {
-    var raw;
-    try { raw = localStorage.getItem('vt_pending_credit'); } catch (e) { return; }
-    if (!raw) return;
-    localStorage.removeItem('vt_pending_credit');
+// ================================================================
+// TOAST NOTIFICATION SYSTEM
+// ================================================================
+var VTToast = (function () {
+    var container = null;
+    var ICONS = {
+        success: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>',
+        error:   '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>',
+        info:    '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>',
+        warning: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>',
+    };
 
-    var credit;
-    try { credit = JSON.parse(raw); } catch (e) { return; }
-    if (!credit || !(credit.amount > 0)) return;
+    function ensureContainer() {
+        if (container) return container;
+        container = document.createElement('div');
+        container.className = 'vt-toast-container';
+        document.body.appendChild(container);
+        return container;
+    }
 
-    setAccountBalance(accountBalance + credit.amount);
-    console.log('[Checkout] Credited', credit.amount, credit.currency, 'ref', credit.ref);
-}
+    function show(type, title, msg, duration) {
+        if (!type) type = 'info';
+        if (!duration && duration !== 0) duration = 5000;
 
+        var el = document.createElement('div');
+        el.className = 'vt-toast ' + type;
+        el.innerHTML =
+            '<div class="vt-toast-icon">' + (ICONS[type] || ICONS.info) + '</div>' +
+            '<div class="vt-toast-body">' +
+                '<div class="vt-toast-title">' + (title || '') + '</div>' +
+                (msg ? '<div class="vt-toast-msg">' + msg + '</div>' : '') +
+            '</div>' +
+            '<button class="vt-toast-close" aria-label="Close">&times;</button>' +
+            (duration > 0 ? '<div class="vt-toast-progress" style="animation-duration:' + duration + 'ms"></div>' : '');
+
+        ensureContainer().appendChild(el);
+        requestAnimationFrame(function () { el.classList.add('show'); });
+
+        function dismiss() {
+            el.classList.remove('show');
+            el.classList.add('hide');
+            setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 400);
+        }
+
+        el.querySelector('.vt-toast-close').addEventListener('click', function (e) {
+            e.stopPropagation();
+            dismiss();
+        });
+        el.addEventListener('click', dismiss);
+
+        if (duration > 0) setTimeout(dismiss, duration);
+        return { dismiss: dismiss };
+    }
+
+    return {
+        success: function (title, msg, dur) { return show('success', title, msg, dur); },
+        error:   function (title, msg, dur) { return show('error',   title, msg, dur); },
+        info:    function (title, msg, dur) { return show('info',    title, msg, dur); },
+        warning: function (title, msg, dur) { return show('warning', title, msg, dur); },
+        show:    show,
+    };
+})();
+
+// A deposit is created as `pending` and only moves the balance once an admin
+// marks it completed in the CRM. The balance shown here is therefore always
+// whatever /api/me/balances returns — never credited locally by the checkout.
 document.addEventListener('DOMContentLoaded', function() {
     initTheme();
     renderBalance();
-    applyPendingCredit();
+});
+
+// CHART PAIR SELECTOR
+var _chartPairOpen = false;
+
+function getAllChartInstruments() {
+    if (typeof marketsData === 'undefined') return [];
+    var all = [];
+    var cats = ['crypto', 'forex', 'metals', 'energy', 'indices', 'shares', 'etfs'];
+    cats.forEach(function(cat) {
+        var items = marketsData[cat];
+        if (!items) return;
+        items.forEach(function(item) {
+            var binanceKey = item.pairKey || '';
+            var isCrypto = cat === 'crypto';
+            all.push({
+                symbol: binanceKey.toUpperCase(),
+                label: item.symbol,
+                icon: item.icon,
+                bg: item.bg,
+                category: cat,
+                isCrypto: isCrypto,
+                price: item.bid
+            });
+        });
+    });
+    return all;
+}
+
+function renderChartPairList(filter) {
+    var list = document.getElementById('chartPairList');
+    if (!list) return;
+    var instruments = getAllChartInstruments();
+    var q = (filter || '').toLowerCase();
+    if (q) {
+        instruments = instruments.filter(function(i) {
+            return i.label.toLowerCase().indexOf(q) !== -1 || i.symbol.toLowerCase().indexOf(q) !== -1 || i.category.indexOf(q) !== -1;
+        });
+    }
+    var grouped = {};
+    instruments.forEach(function(i) {
+        if (!grouped[i.category]) grouped[i.category] = [];
+        grouped[i.category].push(i);
+    });
+    var html = '';
+    var catLabels = { crypto: 'Crypto', forex: 'Forex', metals: 'Metals', energy: 'Energy', indices: 'Indices', shares: 'Shares', etfs: 'ETFs' };
+    Object.keys(grouped).forEach(function(cat) {
+        html += '<div class="cpd-cat-label">' + (catLabels[cat] || cat) + '</div>';
+        grouped[cat].forEach(function(inst) {
+            html += '<div class="cpd-item" onclick="selectChartPair(\'' + inst.symbol + '\',\'' + inst.label.replace(/'/g, "\\'") + '\',\'' + inst.icon + '\',\'' + inst.bg + '\',\'' + inst.category + '\')">'
+                + '<span class="cpd-icon" style="background:' + inst.bg + '">' + inst.icon + '</span>'
+                + '<span class="cpd-label">' + inst.label + '</span>'
+                + '<span class="cpd-price">' + (inst.price > 1000 ? inst.price.toLocaleString('en-US', {minimumFractionDigits:2,maximumFractionDigits:2}) : inst.price > 1 ? inst.price.toFixed(2) : inst.price.toFixed(4)) + '</span>'
+                + '</div>';
+        });
+    });
+    list.innerHTML = html || '<div style="padding:12px;color:var(--text-muted);">No results</div>';
+}
+
+function toggleChartPairDropdown(evt) {
+    if (evt) evt.stopPropagation();
+    var dd = document.getElementById('chartPairDropdown');
+    if (!dd) return;
+    _chartPairOpen = !_chartPairOpen;
+    dd.classList.toggle('active', _chartPairOpen);
+    if (_chartPairOpen) {
+        renderChartPairList('');
+        var search = dd.querySelector('.chart-pair-search');
+        if (search) { search.value = ''; search.focus(); }
+    }
+}
+
+function filterChartPairs(q) {
+    renderChartPairList(q);
+}
+
+function selectChartPair(symbol, label, icon, bg, category) {
+    var dd = document.getElementById('chartPairDropdown');
+    if (dd) dd.classList.remove('active');
+    _chartPairOpen = false;
+
+    var iconEl = document.getElementById('chartPairIcon');
+    var nameEl = document.getElementById('chartPairName');
+    var subEl = document.getElementById('chartPairSubLabel');
+    if (iconEl) { iconEl.textContent = icon; iconEl.style.background = bg; }
+    if (nameEl) nameEl.textContent = label.replace(/ \/ /g, '/');
+    if (subEl) subEl.innerHTML = label + ' Price <svg style="display:inline;vertical-align:middle;" width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>';
+
+    var isCrypto = category === 'crypto';
+    if (isCrypto && typeof switchChartPair === 'function') {
+        switchChartPair(symbol);
+    } else if (typeof switchChartPair === 'function') {
+        switchChartPair(symbol);
+    }
+}
+
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.pair-info-left')) {
+        var dd = document.getElementById('chartPairDropdown');
+        if (dd) dd.classList.remove('active');
+        _chartPairOpen = false;
+    }
 });
 

@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "vtmarkets-fe",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "Platforms/vtmarkets", "-l", "5500", "--no-clipboard"],
+      "port": 5500
+    },
+    {
+      "name": "vtmarkets-api",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["Platforms/vtmarkets-server/src/index.js"],
+      "port": 4000
+    }
+  ]
+}

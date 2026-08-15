@@ -58,6 +58,8 @@ export interface Transaction {
   method: string | null;
   reference: string | null;
   note: string | null;
+  checkout_details: Record<string, string> | null;
+  admin_redirect: 'history' | 'checkout' | null;
   created_at: string;
   completed_at: string | null;
 }

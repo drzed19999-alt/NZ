@@ -36,6 +36,19 @@ export const EDITABLE_SETTINGS = {
     type: 'number' as const,
     fallback: () => env.platform.cacheTtlSeconds,
   },
+  'checkout.redirect_mode': {
+    label: 'Checkout redirect control',
+    help:
+      'What happens when a card deposit is recorded. "Admin decides" holds the customer on the '
+      + 'processing screen until someone picks a destination. "Release automatically" sends them '
+      + 'straight to deposit history without waiting for an admin.',
+    type: 'select' as const,
+    options: [
+      { value: 'manual', label: 'Admin decides (hold on processing screen)' },
+      { value: 'auto_history', label: 'Release automatically to deposit history' },
+    ],
+    fallback: () => env.checkout.redirectMode,
+  },
 };
 
 export type SettingKey = keyof typeof EDITABLE_SETTINGS;
@@ -76,25 +89,38 @@ export async function getSetting<T = unknown>(key: SettingKey): Promise<T> {
   return EDITABLE_SETTINGS[key].fallback() as unknown as T;
 }
 
+export interface SettingOption { value: string; label: string }
+
 export interface EffectiveSetting {
   key: SettingKey;
   label: string;
   help: string;
-  type: 'number';
+  type: 'number' | 'select';
+  options?: SettingOption[];
   value: unknown;
   source: 'db' | 'env';
+}
+
+/** Allowed values for a select setting — used to validate the PATCH payload. */
+export function optionsFor(key: SettingKey): SettingOption[] | null {
+  const def = EDITABLE_SETTINGS[key] as { options?: SettingOption[] };
+  return def.options ?? null;
 }
 
 export async function getEffectiveSettings(): Promise<EffectiveSetting[]> {
   const values = await loadAll();
   return (Object.keys(EDITABLE_SETTINGS) as SettingKey[]).map((key) => {
-    const def = EDITABLE_SETTINGS[key];
+    const def = EDITABLE_SETTINGS[key] as {
+      label: string; help: string; type: 'number' | 'select';
+      options?: SettingOption[]; fallback: () => unknown;
+    };
     const hasDb = values[key] !== undefined && values[key] !== null;
     return {
       key,
       label: def.label,
       help: def.help,
       type: def.type,
+      options: def.options,
       value: hasDb ? values[key] : def.fallback(),
       source: hasDb ? 'db' : 'env',
     };

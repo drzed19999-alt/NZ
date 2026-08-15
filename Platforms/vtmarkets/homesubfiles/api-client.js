@@ -27,6 +27,13 @@
   var API_BASE = resolveApiBase();
   var TOKEN_KEY = 'vt_token';
 
+  // The static host serves clean URLs, so the login page is reachable as both
+  // /login and /login.html. Match either — a miss here bounces the login page
+  // to itself and wipes any inline error the form just rendered.
+  function onLoginPage() {
+    return /(^|\/)login(\.html)?$/.test(location.pathname);
+  }
+
   // ---------------- session ----------------
   var VTAuth = {
     getToken: function () { try { return localStorage.getItem(TOKEN_KEY); } catch (e) { return null; } },
@@ -63,10 +70,12 @@
         headers: headers,
         body: body ? JSON.stringify(body) : undefined,
       }).then(function (r) {
-        if (r.status === 401) {
+        if (r.status === 401 && !/\/api\/auth\/login$/.test(path)) {
           // Session expired / invalid — bounce to login (except on login page).
+          // A 401 from the login call itself just means wrong credentials, so
+          // it falls through to the caller as a normal rejected promise.
           VTAuth.clear();
-          if (!/login\.html$/.test(location.pathname)) window.location.replace('login.html');
+          if (!onLoginPage()) window.location.replace('login.html');
         }
         return r.json().catch(function () { return {}; }).then(function (data) {
           if (!r.ok) {
@@ -104,7 +113,7 @@
 
   // ---------------- formatting ----------------
   function money(v, cur) {
-    return '$' + Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + (cur || 'USD');
+    return '$' + Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + (cur || 'CAD');
   }
   function initials(u) {
     if (!u) return '–';
@@ -138,7 +147,7 @@
       var d = VTData;
       if (d.balances && typeof window.setAccountBalance === 'function') {
         window.setAccountBalance(d.balances.summary.total_balance);
-        window.accountCurrency = d.balances.summary.currency || 'USD';
+        window.accountCurrency = d.balances.summary.currency || 'CAD';
         if (typeof window.renderBalance === 'function') window.renderBalance();
       }
       if (d.user) {
@@ -216,7 +225,7 @@
       var px = priceEl ? Number(priceEl.textContent.replace(/[^0-9.]/g, '')) || 0 : 0;
       maxEl.textContent = px > 0
         ? 'Max: ' + (spot / px).toFixed(6) + ' BTC'
-        : 'Max: ' + money(spot, (VTData.balances && VTData.balances.summary.currency) || 'USD');
+        : 'Max: ' + money(spot, (VTData.balances && VTData.balances.summary.currency) || 'CAD');
     },
 
     // Called after switchPageView injects viewsContainer[viewId].
@@ -307,7 +316,7 @@
     // showed fixed figures ($12,480 / $3,215.40 / +$9,264.60) for every user.
     txTiles: function (root) {
       var cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
-      var cur = (VTData.balances && VTData.balances.summary.currency) || 'USD';
+      var cur = (VTData.balances && VTData.balances.summary.currency) || 'CAD';
       var dep = 0, wd = 0;
       (VTData.transactions || []).forEach(function (t) {
         if (new Date(t.created_at).getTime() < cutoff) return;
@@ -323,14 +332,18 @@
       set('txTileNet', dep - wd, true);
     },
 
-    // Withdrawable amount — was a fixed "85,420.00 USDT" for everyone.
     withdrawAvail: function (root) {
       var scope = root || document;
       var el = scope.querySelector('#withdrawAvailVal');
-      if (el && VTData.balances) {
-        el.textContent = money(VTData.balances.summary.total_balance, VTData.balances.summary.currency);
+      if (VTData.balances) {
+        var bal = Number(VTData.balances.summary.total_balance) || 0;
+        if (el) el.textContent = money(bal, VTData.balances.summary.currency);
         var qty = scope.querySelector('#withdrawAssetQty');
-        if (qty) qty.textContent = Number(VTData.balances.summary.total_balance || 0).toFixed(2);
+        if (qty) qty.textContent = bal.toFixed(2);
+        if (typeof FIAT_AVAILABLE !== 'undefined') FIAT_AVAILABLE = bal;
+        if (typeof WITHDRAW_ASSETS !== 'undefined') {
+          for (var k in WITHDRAW_ASSETS) WITHDRAW_ASSETS[k].avail = bal;
+        }
       }
       // The pre-withdrawal checklist claimed "Identity verification: Verified"
       // unconditionally. Show the account's actual KYC state.
@@ -381,7 +394,7 @@
         return '<tr>' +
           '<td><span class="tx-hash">' + (t.reference || t.id.slice(0, 8)) + '…</span></td>' +
           '<td><span class="change-pill ' + pill + '">' + t.type + '</span></td>' +
-          '<td><div class="tx-asset">' + (t.asset || 'USD') + '</div></td>' +
+          '<td><div class="tx-asset">' + (t.asset || 'CAD') + '</div></td>' +
           '<td><span class="tx-amount ' + (inc ? 'in' : 'out') + '">' + amt + '</span></td>' +
           '<td style="font-family:monospace;color:var(--text-muted);">0.00</td>' +
           '<td><span class="tx-status-pill ' + statusClass + '">' + t.status + '</span></td>' +
@@ -426,6 +439,16 @@
         return;
       }
       VTHydrate.shell();
+
+      // Deep link: #transaction-history etc. The hosted checkout sends the user
+      // straight to their history so the new pending deposit is on screen.
+      var wanted = (location.hash || '').replace(/^#/, '');
+      if (wanted && document.getElementById('view-' + wanted) && typeof window.switchPageView === 'function') {
+        var navItem = document.getElementById('nav-' + wanted);
+        window.switchPageView(wanted, navItem || null);
+        return;
+      }
+
       // hydrate the currently active view (default dashboard needs no template)
       var active = document.querySelector('.page-view.active');
       if (active && active.id) VTHydrate.view(active.id.replace('view-', ''));

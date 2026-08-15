@@ -360,6 +360,7 @@ var i18nDict = {
         totalCollateral: "Total Collateral",
 
         // Widget Cards
+        navBalance: "Balance",
         totalAssets: "Total assets estimate",
         historyLink: "History →",
         tradingAccountTitle: "Trading Account",
@@ -388,8 +389,13 @@ var i18nDict = {
         tradeBtn: "Trade",
 
         // News & Leaderboard
+        feedLive: "LIVE",
+        feedSimulated: "SIMULATED",
+
         newsTitle: "Market News & Analysis",
+        newsEmpty: "No market commentary published yet.",
         leaderboardTitle: "Top Copy Trading Masters ⓘ",
+        leaderboardEmpty: "No verified master traders available yet.",
         whatIsCopyTrading: "What is Copy Trading?",
         copyTradingDesc: "VT Markets makes copy trading effortless. Follow verified master traders, replicate their strategies in real-time with automated risk parameters, and grow your portfolio without needing market expertise.",
         copiers: "Copiers",
@@ -400,8 +406,8 @@ var i18nDict = {
         copyStrategyBtn: "Copy Strategy",
 
         // Account View
-        verifiedKyc: "✓ Verified KYC Tier 2",
-        memberVipTag: "UID: 88492015 • Member since Aug 2026 • VIP 1 Institutional Trader",
+        verifiedKyc: "KYC —",
+        memberVipTag: "UID: — • Member since — • VIP 1 Institutional Trader",
         depositFundsBtn: "Deposit Funds",
         spotWallet: "Spot Wallet",
         futuresMargin: "Futures Margin",
@@ -792,6 +798,7 @@ var i18nDict = {
         totalCollateral: "Garantie totale",
 
         // Widget Cards
+        navBalance: "Solde",
         totalAssets: "Estimation du total des actifs",
         historyLink: "Historique →",
         tradingAccountTitle: "Compte de Trading",
@@ -820,8 +827,13 @@ var i18nDict = {
         tradeBtn: "Trader",
 
         // News & Leaderboard
+        feedLive: "EN DIRECT",
+        feedSimulated: "SIMULÉ",
+
         newsTitle: "Actualités & Analyses du Marché",
+        newsEmpty: "Aucun commentaire de marché publié pour le moment.",
         leaderboardTitle: "Top Masters du Copy Trading ⓘ",
+        leaderboardEmpty: "Aucun master trader vérifié disponible pour le moment.",
         whatIsCopyTrading: "Qu'est-ce que le Copy Trading ?",
         copyTradingDesc: "VT Markets rend le copy trading facile. Suivez des traders masters vérifiés, répliquez leurs stratégies en temps réel avec des paramètres de risque automatisés et développez votre portefeuille sans expertise préalable.",
         copiers: "Copieurs",
@@ -832,8 +844,8 @@ var i18nDict = {
         copyStrategyBtn: "Copier la Stratégie",
 
         // Account View
-        verifiedKyc: "✓ KYC Niveau 2 Vérifié",
-        memberVipTag: "UID: 88492015 • Membre depuis août 2026 • Trader Institutionnel VIP 1",
+        verifiedKyc: "KYC —",
+        memberVipTag: "UID: — • Membre depuis — • Trader Institutionnel VIP 1",
         depositFundsBtn: "Déposer des fonds",
         spotWallet: "Portefeuille Spot",
         futuresMargin: "Marge Futures",
@@ -1224,6 +1236,7 @@ var i18nDict = {
         totalCollateral: "Garantía total",
 
         // Widget Cards
+        navBalance: "Saldo",
         totalAssets: "Estimación total de activos",
         historyLink: "Historial →",
         tradingAccountTitle: "Cuenta de Trading",
@@ -1252,8 +1265,13 @@ var i18nDict = {
         tradeBtn: "Operar",
 
         // News & Leaderboard
+        feedLive: "EN VIVO",
+        feedSimulated: "SIMULADO",
+
         newsTitle: "Noticias y Análisis del Mercado",
+        newsEmpty: "Aún no se ha publicado ningún comentario de mercado.",
         leaderboardTitle: "Top Masters de Copy Trading ⓘ",
+        leaderboardEmpty: "Aún no hay master traders verificados disponibles.",
         whatIsCopyTrading: "¿Qué es el Copy Trading?",
         copyTradingDesc: "VT Markets facilita el copy trading. Siga a los mejores operadores verificados, replique sus estrategias en tiempo real con parámetros de riesgo automatizados y haga crecer su cartera sin necesidad de experiencia.",
         copiers: "Copiadores",
@@ -1264,8 +1282,8 @@ var i18nDict = {
         copyStrategyBtn: "Copiar Estrategia",
 
         // Account View
-        verifiedKyc: "✓ KYC Nivel 2 Verificado",
-        memberVipTag: "UID: 88492015 • Miembro desde agosto de 2026 • Operador Institucional VIP 1",
+        verifiedKyc: "KYC —",
+        memberVipTag: "UID: — • Miembro desde — • Operador Institucional VIP 1",
         depositFundsBtn: "Depositar Fondos",
         spotWallet: "Billetera Spot",
         futuresMargin: "Margen Futuros",
@@ -1342,6 +1360,10 @@ function applyLanguage(lang) {
     // 3. Re-render Markets table to update headers and trade buttons
     if (typeof renderMarketsTable === 'function') {
         renderMarketsTable();
+    }
+    // The feed badge is written from JS, so data-i18n cannot reach it.
+    if (typeof syncFeedStatus === 'function') {
+        syncFeedStatus();
     }
 }
 
