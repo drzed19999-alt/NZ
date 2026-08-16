@@ -6,7 +6,7 @@ import { api } from '@/lib/api';
 import { timeAgo } from '@/lib/format';
 import { generatePassword } from '@/lib/password';
 import {
-  Button, Checkbox, DataTable, ErrorText, Field, FilterBar, InsetBox, Modal, Notice,
+  Button, DataTable, ErrorText, Field, FilterBar, InsetBox, Modal, Notice,
   PageHeader, RadioCard, Select, StatusBadge, TextInput, type Column,
 } from '@/components/ui';
 
@@ -87,17 +87,17 @@ const NEW_LEAD_FIELDS = ['full_name', 'email', 'phone', 'country'] as const;
 
 function NewLeadModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
   const [form, setForm] = useState({ full_name: '', email: '', phone: '', country: '' });
-  const [createAccount, setCreateAccount] = useState(false);
+  // Every lead gets a platform account — there is no such thing here as a lead
+  // without one, so this is not a choice the rep makes.
   const [mode, setMode] = useState<'password' | 'email'>('password');
   const [password, setPassword] = useState('');
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [done, setDone] = useState<any>(null);
 
-  // Account creation requires the email; if the rep unchecks it or clears
-  // the email, drop any partial error so the disabled state reads clean.
-  const emailMissing = createAccount && !form.email;
-  const passwordTooShort = createAccount && mode === 'password' && password.length < 8;
+  // The account is always created, so an email is always required.
+  const emailMissing = !form.email;
+  const passwordTooShort = mode === 'password' && password.length < 8;
   const canSubmit = !emailMissing && !passwordTooShort;
 
   async function save() {
@@ -106,8 +106,10 @@ function NewLeadModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
     try {
       const lead = (await api.post('/api/leads', form)).lead;
 
-      // Only try to convert if the rep opted in and we have an email.
-      if (createAccount && lead?.id && form.email) {
+      if (lead?.id && form.email) {
+        // Creates the platform account and links it. mark_converted is left
+        // unset, so the lead keeps its current pipeline stage — having an
+        // account and being a converted lead are separate facts.
         const body: any = { send_activation_email: mode === 'email' };
         if (mode === 'password') {
           body.password = password;
@@ -168,7 +170,7 @@ function NewLeadModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
       footer={<>
         <Button onClick={onClose}>Cancel</Button>
         <Button variant="primary" onClick={save} busy={saving} busyLabel="Saving…" disabled={!canSubmit}>
-          {createAccount ? 'Create lead & account' : 'Create lead'}
+          Create lead &amp; account
         </Button>
       </>}
     >
@@ -179,14 +181,12 @@ function NewLeadModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
       ))}
 
       <div className="mt-4 pt-4 border-t">
-        <Checkbox
-          label="Also create a platform account for this lead"
-          checked={createAccount}
-          onChange={(e) => setCreateAccount(e.target.checked)}
-        />
+        <div className="text-sm font-medium mb-1">Platform access</div>
+        <div className="muted text-xs mb-3">
+          Every lead gets a trading account. Choose how they receive their credentials.
+        </div>
 
-        {createAccount && (
-          <div className="mt-3 space-y-3">
+        <div className="mt-3 space-y-3">
             {emailMissing && (
               <Notice tone="warn">An email is required to create a platform account.</Notice>
             )}
@@ -214,8 +214,7 @@ function NewLeadModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
               title="Send activation email"
               description="The client sets their own password via a secure link."
             />
-          </div>
-        )}
+        </div>
       </div>
 
       <ErrorText className="mt-3">{err}</ErrorText>

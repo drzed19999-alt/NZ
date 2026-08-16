@@ -298,7 +298,7 @@ var i18nDict = {
         statusCompleted: "Completed",
         statusPending: "Pending",
         showing: "Showing",
-        ofTx: "of 42 transactions",
+        ofTxCount: "of",
 
         themeToggle: "Light / Dark mode",
         colTime: "Time",
@@ -736,7 +736,7 @@ var i18nDict = {
         statusCompleted: "Terminé",
         statusPending: "En attente",
         showing: "Affichage",
-        ofTx: "sur 42 transactions",
+        ofTxCount: "sur",
 
         themeToggle: "Mode clair / sombre",
         colTime: "Heure",
@@ -1174,7 +1174,7 @@ var i18nDict = {
         statusCompleted: "Completado",
         statusPending: "Pendiente",
         showing: "Mostrando",
-        ofTx: "de 42 transacciones",
+        ofTxCount: "de",
 
         themeToggle: "Modo claro / oscuro",
         colTime: "Hora",

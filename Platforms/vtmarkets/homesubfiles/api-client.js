@@ -133,6 +133,48 @@
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
+  // ---------------- transaction paging ----------------
+  var TX_PAGE_SIZE = 10;
+  var txHistoryPage = 1;
+
+  // The pagination control used to be static markup claiming "1–5 of 42
+  // transactions" for every account. Build it from the real row count, and hide
+  // it entirely when there is only one page rather than showing dead buttons.
+  function renderTxPagination(root, total, current) {
+    var scope = root || document;
+    var wrap = scope.querySelector('#txPagination');
+    var summary = scope.querySelector('#txPageSummary');
+    var btns = scope.querySelector('#txPageBtns');
+    if (!wrap || !summary || !btns) return;
+
+    var totalPages = Math.max(1, Math.ceil(total / TX_PAGE_SIZE));
+    if (total === 0 || totalPages === 1) { wrap.style.display = 'none'; return; }
+    wrap.style.display = '';
+
+    var from = (current - 1) * TX_PAGE_SIZE + 1;
+    var to = Math.min(current * TX_PAGE_SIZE, total);
+    var dict = (typeof i18nDict !== 'undefined' && i18nDict[typeof currentLang !== 'undefined' ? currentLang : 'en']) || {};
+    summary.textContent = (dict.showing || 'Showing') + ' ' + from + '–' + to + ' '
+      + (dict.ofTxCount || 'of') + ' ' + total;
+
+    var html = '<button class="page-btn" data-page="' + (current - 1) + '"'
+      + (current === 1 ? ' disabled' : '') + '>‹</button>';
+    for (var p = 1; p <= totalPages; p++) {
+      html += '<button class="page-btn' + (p === current ? ' active' : '') + '" data-page="' + p + '">' + p + '</button>';
+    }
+    html += '<button class="page-btn" data-page="' + (current + 1) + '"'
+      + (current === totalPages ? ' disabled' : '') + '>›</button>';
+    btns.innerHTML = html;
+
+    btns.querySelectorAll('.page-btn').forEach(function (b) {
+      b.addEventListener('click', function () {
+        if (b.disabled) return;
+        var p = parseInt(b.getAttribute('data-page'), 10);
+        if (p >= 1 && p <= totalPages) VTHydrate.txHistory(scope, p);
+      });
+    });
+  }
+
   function fmtDate(iso) {
     if (!iso) return '';
     var d = new Date(iso);
@@ -233,7 +275,9 @@
       var root = document.getElementById('view-' + viewId);
       if (!root) return;
       if (viewId === 'account') VTHydrate.account(root);
-      if (viewId === 'transaction-history' || viewId === 'transactionHistory') VTHydrate.txHistory(root);
+      // Always land on page 1 when the view is opened, rather than resuming
+      // whatever page was last viewed in a previous visit.
+      if (viewId === 'transaction-history' || viewId === 'transactionHistory') VTHydrate.txHistory(root, 1);
       if (viewId === 'withdraw') VTHydrate.withdrawAvail(root);
       if (viewId === 'deposit') VTHydrate.recentDeposits(root);
       // Identity hooks appear inside injected templates too, not just the shell.
@@ -320,6 +364,11 @@
       var dep = 0, wd = 0;
       (VTData.transactions || []).forEach(function (t) {
         if (new Date(t.created_at).getTime() < cutoff) return;
+        // Settled money only. A pending deposit has not moved the balance, and
+        // it is already reported by its own "awaiting confirmation" tile —
+        // counting it here would state it twice and disagree with the balance.
+        // The platform's getFinancialSummary filters the same way.
+        if (t.status !== 'completed') return;
         if (t.type === 'deposit') dep += Number(t.amount) || 0;
         if (t.type === 'withdrawal') wd += Number(t.amount) || 0;
       });
@@ -378,15 +427,25 @@
       }).join('');
     },
 
-    txHistory: function (root) {
+    txHistory: function (root, page) {
       VTHydrate.txTiles(root);
       var tbody = root.querySelector('#txHistoryTableBody');
       if (!tbody || !VTData.transactions) return;
       if (!VTData.transactions.length) {
         tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:24px;">No transactions yet</td></tr>';
+        renderTxPagination(root, 0, 1);
         return;
       }
-      tbody.innerHTML = VTData.transactions.map(function (t) {
+
+      var all = VTData.transactions;
+      var totalPages = Math.max(1, Math.ceil(all.length / TX_PAGE_SIZE));
+      var current = Math.min(Math.max(1, page || txHistoryPage), totalPages);
+      txHistoryPage = current;
+      var slice = all.slice((current - 1) * TX_PAGE_SIZE, current * TX_PAGE_SIZE);
+
+      renderTxPagination(root, all.length, current);
+
+      tbody.innerHTML = slice.map(function (t) {
         var inc = t.type === 'deposit';
         var pill = inc ? 'pos' : 'neg';
         var amt = (inc ? '+' : '−') + Number(t.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });

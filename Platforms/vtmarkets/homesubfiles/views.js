@@ -945,15 +945,11 @@ var viewsContainer = {
                     </table>
                 </div>
 
-                <div class="tx-pagination">
-                    <span><span data-i18n="showing">Showing</span> 1–5 <span data-i18n="ofTx">of 42 transactions</span></span>
-                    <div class="page-btns">
-                        <button class="page-btn">‹</button>
-                        <button class="page-btn active">1</button>
-                        <button class="page-btn">2</button>
-                        <button class="page-btn">3</button>
-                        <button class="page-btn">›</button>
-                    </div>
+                <!-- Built by VTHydrate.txHistory() from the real row count. The
+                     whole control stays hidden while everything fits on one page. -->
+                <div class="tx-pagination" id="txPagination" style="display:none;">
+                    <span id="txPageSummary"></span>
+                    <div class="page-btns" id="txPageBtns"></div>
                 </div>
             </div>
         </div>

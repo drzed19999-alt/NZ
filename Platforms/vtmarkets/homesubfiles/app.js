@@ -43,7 +43,16 @@ function openNotificationsFromMenu(evt) {
 // SIDEBAR TOGGLES
 function toggleSidebar() {
     var sidebar = document.getElementById('sidebar');
-    if (sidebar) sidebar.classList.toggle('collapsed');
+    if (!sidebar) return;
+    var collapsed = sidebar.classList.toggle('collapsed');
+
+    // Collapsing hides the labels, so any group left open would just be a strip
+    // of unreadable rows taking up the rail. Close them all on the way in.
+    if (collapsed) {
+        sidebar.querySelectorAll('.menu-item.expanded').forEach(function (el) {
+            el.classList.remove('expanded');
+        });
+    }
 }
 
 function toggleMobileSidebar() {
