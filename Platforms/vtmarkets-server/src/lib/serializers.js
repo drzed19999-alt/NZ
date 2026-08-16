@@ -133,7 +133,21 @@ function paymentMethod(m) {
   };
 }
 
+/** API key metadata. key_hash is never serialized — the plaintext key is shown
+ *  once at creation and is unrecoverable after that. */
+function apiKey(k) {
+  return {
+    id: k.id,
+    label: k.label,
+    key_prefix: k.key_prefix,
+    created_at: k.created_at,
+    last_used_at: k.last_used_at,
+    revoked_at: k.revoked_at,
+    active: !k.revoked_at,
+  };
+}
+
 module.exports = {
   isOnline, presence, publicUser, account, transaction, position, kyc,
-  botConfig, botEvent, paymentMethod,
+  botConfig, botEvent, paymentMethod, apiKey,
 };

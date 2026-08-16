@@ -6,8 +6,8 @@ const db = require('../db');
 const config = require('../config');
 const usersService = require('../services/users.service');
 const { requireUser } = require('../auth/middleware');
-const { hashPassword, verifyPassword } = require('../auth/password');
-const { asyncHandler, badRequest, unauthorized } = require('../lib/http');
+const { hashPassword, verifyPassword, randomToken, sha256 } = require('../auth/password');
+const { asyncHandler, badRequest, unauthorized, notFound } = require('../lib/http');
 const serialize = require('../lib/serializers');
 const webhooks = require('../lib/webhooks');
 
@@ -221,6 +221,70 @@ router.patch('/bot', asyncHandler(async (req, res) => {
   webhooks.emit('bot.updated', { user_id: req.user.id, status: bot.status, actor: 'user' });
 
   res.json({ bot: serialize.botConfig(bot, req.user.id) });
+}));
+
+// --- API keys (customer side) ----------------------------------------------
+// The user_api_keys table has existed since the beginning with no routes behind
+// it, so the UI shipped two invented keys and a Revoke button that only raised a
+// toast. Only the hash is stored: the plaintext key is shown once, at creation,
+// and cannot be recovered afterwards.
+
+const apiKeyCreateSchema = z.object({
+  label: z.string().min(1).max(60),
+});
+
+router.get('/api-keys', asyncHandler(async (req, res) => {
+  const { rows } = await db.query(
+    `select id, label, key_prefix, created_at, last_used_at, revoked_at
+       from user_api_keys where user_id = $1 order by created_at desc`,
+    [req.user.id]
+  );
+  res.json({ api_keys: rows.map(serialize.apiKey) });
+}));
+
+router.post('/api-keys', asyncHandler(async (req, res) => {
+  const parsed = apiKeyCreateSchema.safeParse(req.body);
+  if (!parsed.success) throw badRequest('Invalid API key', parsed.error.flatten());
+
+  const active = await db.one(
+    `select count(*)::int as n from user_api_keys where user_id = $1 and revoked_at is null`,
+    [req.user.id]
+  );
+  if (active.n >= 10) throw badRequest('You already have 10 active API keys. Revoke one first.');
+
+  // vt_live_<random>. The prefix is stored for display so a user can tell their
+  // keys apart in the table without the secret ever being readable again.
+  const secret = randomToken(24);
+  const full = `vt_live_${secret}`;
+  const key = await db.one(
+    `insert into user_api_keys (user_id, label, key_prefix, key_hash)
+     values ($1,$2,$3,$4) returning *`,
+    [req.user.id, parsed.data.label, full.slice(0, 16), sha256(full)]
+  );
+
+  await db.query(
+    `insert into activity_log (user_id, event, data) values ($1,'api_key_created',$2::jsonb)`,
+    [req.user.id, JSON.stringify({ label: parsed.data.label, key_prefix: full.slice(0, 16) })]
+  );
+
+  // `key` is returned exactly once and never persisted in plaintext.
+  res.status(201).json({ api_key: serialize.apiKey(key), key: full });
+}));
+
+router.delete('/api-keys/:keyId', asyncHandler(async (req, res) => {
+  const { rows } = await db.query(
+    `update user_api_keys set revoked_at = now()
+      where id = $1 and user_id = $2 and revoked_at is null returning *`,
+    [req.params.keyId, req.user.id]
+  );
+  if (!rows[0]) throw notFound('API key not found or already revoked');
+
+  await db.query(
+    `insert into activity_log (user_id, event, data) values ($1,'api_key_revoked',$2::jsonb)`,
+    [req.user.id, JSON.stringify({ key_prefix: rows[0].key_prefix })]
+  );
+
+  res.json({ api_key: serialize.apiKey(rows[0]) });
 }));
 
 module.exports = router;

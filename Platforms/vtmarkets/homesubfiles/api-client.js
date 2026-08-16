@@ -332,6 +332,39 @@
       if (dot) dot.style.display = unread.length ? '' : 'none';
     },
 
+    // Real API keys from /api/me/api-keys. The table used to ship two invented
+    // keys with fabricated IP whitelists and a Revoke button that only toasted.
+    apiKeys: function (root) {
+      var tbody = (root || document).querySelector('#apiKeysTableBody');
+      if (!tbody) return;
+
+      VTApi.get('/api/me/api-keys', true)
+        .then(function (r) {
+          var keys = r.api_keys || [];
+          if (!keys.length) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px;">'
+              + 'No API keys yet. Create one to connect a trading bot or external client.</td></tr>';
+            return;
+          }
+          tbody.innerHTML = keys.map(function (k) {
+            return '<tr>' +
+              '<td style="font-weight:700;">' + esc(k.label) + '</td>' +
+              '<td style="font-family:\'JetBrains Mono\',monospace; color:var(--primary-blue);">' + esc(k.key_prefix) + '…</td>' +
+              '<td style="color:var(--text-muted);font-size:11px;">' + fmtDate(k.created_at) + '</td>' +
+              '<td style="color:var(--text-muted);font-size:11px;">' + (k.last_used_at ? fmtDate(k.last_used_at) : 'Never') + '</td>' +
+              '<td><span class="change-pill ' + (k.active ? 'pos">Active' : 'neg">Revoked') + '</span></td>' +
+              '<td>' + (k.active
+                ? '<button class="btn-trade-row" style="background:#fee2e2; color:#ef4444;" onclick="revokeApiKey(\'' + k.id + '\')">Revoke</button>'
+                : '<span style="color:var(--text-muted);font-size:11px;">—</span>') + '</td>' +
+              '</tr>';
+          }).join('');
+        })
+        .catch(function () {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px;">'
+            + 'Could not load your API keys.</td></tr>';
+        });
+    },
+
     // The quick-trade panel advertised a fabricated "Max: 10.0 BTC" and a
     // prefilled price. Both now derive from the real spot balance + live price.
     quickTrade: function () {
@@ -353,7 +386,7 @@
     view: function (viewId) {
       var root = document.getElementById('view-' + viewId);
       if (!root) return;
-      if (viewId === 'account') VTHydrate.account(root);
+      if (viewId === 'account') { VTHydrate.account(root); VTHydrate.apiKeys(root); }
       // Always land on page 1 when the view is opened, rather than resuming
       // whatever page was last viewed in a previous visit.
       if (viewId === 'transaction-history' || viewId === 'transactionHistory') VTHydrate.txHistory(root, 1);
@@ -607,6 +640,42 @@
   }
 
   // Expose for other scripts / login page.
+  // --- API key actions -------------------------------------------------------
+  // The plaintext key comes back from the server exactly once, so it is shown
+  // immediately and never fetched again.
+  window.createApiKey = function () {
+    var label = window.prompt('Name this API key (e.g. "Trading bot", "Portfolio tracker"):');
+    if (label === null) return;
+    label = String(label).trim();
+    if (!label) { VTToast.warning('Label required', 'Give the key a name so you can tell your keys apart.'); return; }
+
+    VTApi.post('/api/me/api-keys', { label: label }, true)
+      .then(function (r) {
+        VTHydrate.apiKeys(document);
+        // Deliberately blocking: this is the only time the key is readable.
+        window.prompt(
+          'Copy your API key now — it cannot be shown again:',
+          r.key
+        );
+        VTToast.success('API key created', '"' + label + '" is active. Store the key somewhere safe.');
+      })
+      .catch(function (e) {
+        VTToast.error('Could not create key', (e && e.message) || 'Please try again.');
+      });
+  };
+
+  window.revokeApiKey = function (id) {
+    if (!window.confirm('Revoke this API key? Anything using it will stop working immediately.')) return;
+    VTApi.request('DELETE', '/api/me/api-keys/' + id, null, true)
+      .then(function () {
+        VTHydrate.apiKeys(document);
+        VTToast.success('API key revoked', 'The key can no longer be used.');
+      })
+      .catch(function (e) {
+        VTToast.error('Could not revoke key', (e && e.message) || 'Please try again.');
+      });
+  };
+
   // Replaces the CSS-only version in app.js: that one stripped the "unread"
   // class and the badge came straight back on the next hydrate.
   window.clearNotifications = function () {

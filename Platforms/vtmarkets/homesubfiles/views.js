@@ -133,38 +133,25 @@ var viewsContainer = {
                     <div style="font-size:16px; font-weight:800; color:var(--text-dark);">Institutional API Keys</div>
                     <div style="font-size:11px; color:var(--text-muted);">Manage high-frequency trading API keys with IP whitelist protection.</div>
                 </div>
-                <button class="btn-deposit-top" onclick="VTToast.info('API Key', 'New institutional API key dialog triggered.')">+ Create New API Key</button>
+                <button class="btn-deposit-top" onclick="createApiKey()">+ Create New API Key</button>
             </div>
-            
+
             <div class="table-responsive-wrapper">
                 <table class="markets-table">
                     <thead>
                         <tr>
                             <th>Key Label</th>
                             <th>API Key ID</th>
-                            <th>Permissions</th>
-                            <th>IP Whitelist</th>
+                            <th>Created</th>
+                            <th>Last used</th>
                             <th>Status</th>
                             <th>Action</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr>
-                            <td style="font-weight:700;">Quant-Algo-HFT-Bot</td>
-                            <td style="font-family:'JetBrains Mono',monospace; color:var(--primary-blue);">vt_live_99a8f...41b0</td>
-                            <td><span class="tx-status-pill tx-status-completed">Read & Trade</span></td>
-                            <td style="font-family:'JetBrains Mono',monospace;">185.220.101.4</td>
-                            <td><span class="change-pill pos">Active</span></td>
-                            <td><button class="btn-trade-row" style="background:#fee2e2; color:#ef4444;" onclick="VTToast.warning('API Key Revoked', 'This key has been permanently revoked.')">Revoke</button></td>
-                        </tr>
-                        <tr>
-                            <td style="font-weight:700;">MarketMaker-Arbitrum</td>
-                            <td style="font-family:'JetBrains Mono',monospace; color:var(--primary-blue);">vt_live_44e1c...99a2</td>
-                            <td><span class="tx-status-pill tx-status-completed">Futures Only</span></td>
-                            <td style="font-family:'JetBrains Mono',monospace;">82.165.92.14</td>
-                            <td><span class="change-pill pos">Active</span></td>
-                            <td><button class="btn-trade-row" style="background:#fee2e2; color:#ef4444;" onclick="VTToast.warning('API Key Revoked', 'This key has been permanently revoked.')">Revoke</button></td>
-                        </tr>
+                    <!-- Rendered from /api/me/api-keys by VTHydrate.apiKeys().
+                         Previously two invented keys with fabricated IPs. -->
+                    <tbody id="apiKeysTableBody">
+                        <tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px;">Loading…</td></tr>
                     </tbody>
                 </table>
             </div>
