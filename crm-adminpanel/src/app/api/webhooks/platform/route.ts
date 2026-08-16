@@ -3,7 +3,10 @@ import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { env } from '@/lib/env';
 import { touchCacheFromEvent } from '@/lib/investors';
-import { evaluateTransactionEvent, evaluateKycEvent, evaluateCheckoutWaiting } from '@/lib/alerts';
+import {
+  evaluateTransactionEvent, evaluateKycEvent, evaluateCheckoutWaiting,
+  evaluateTransactionUpdated, evaluateTransactionReversed,
+} from '@/lib/alerts';
 import { getSetting } from '@/lib/settings';
 import { platform } from '@/lib/crypto-platform/client';
 import { rateLimit } from '@/lib/rate-limit';
@@ -96,6 +99,17 @@ export async function POST(req: Request) {
             .catch((e: Error) => console.error('[platform webhook] auto-release failed:', e.message));
         }
       }
+    } else if (event === 'transaction.updated') {
+      // The state change is what the desk waits on: settled, failed, cancelled.
+      await evaluateTransactionUpdated({
+        user_id: userId!, type: data.type, status: data.status,
+        amount: Number(data.amount), currency: data.currency, id: data.id,
+      });
+    } else if (event === 'transaction.reversed') {
+      await evaluateTransactionReversed({
+        user_id: userId!, type: data.type,
+        amount: Number(data.amount), currency: data.currency, id: data.id,
+      });
     } else if (event === 'kyc.updated') {
       await evaluateKycEvent({ user_id: userId!, status: data.status, level: data.level });
     }

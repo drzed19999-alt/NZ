@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { api } from '@/lib/api';
 import { timeAgo, compactMoney } from '@/lib/format';
 import {
-  FeedRow, InsetBox, PageHeader, Panel, PanelLink, Pill, SkeletonList, SkeletonStats,
+  Button, FeedRow, InsetBox, PageHeader, Panel, PanelLink, Pill, SkeletonList, SkeletonStats,
   StatGrid, StatStrip, StatusBadge, type StatItem,
 } from '@/components/ui';
 
@@ -22,6 +22,22 @@ export default function DashboardPage() {
   const [leads, setLeads] = useState<any[]>([]);
   const [alerts, setAlerts] = useState<any[]>([]);
   const [feedLoading, setFeedLoading] = useState(true);
+  const [acking, setAcking] = useState<string | null>(null);
+
+  async function acknowledge(id: string) {
+    setAcking(id);
+    // Drop it locally straight away; realtime will confirm.
+    setAlerts((prev) => prev.filter((a) => a.id !== id));
+    try {
+      await api.patch(`/api/alerts/${id}`, { acknowledged: true });
+      api.get<Stats>('/api/stats').then(setStats).catch(() => {});
+    } catch {
+      // Put it back if the server rejected the change.
+      loadLive();
+    } finally {
+      setAcking(null);
+    }
+  }
 
   const loadLive = useCallback(async () => {
     const supabase = createClient();
@@ -102,13 +118,33 @@ export default function DashboardPage() {
             {!feedLoading && alerts.length === 0 && <div className="muted text-[13px] py-6 text-center">Nothing flagged.</div>}
             {!feedLoading && alerts.map((a) => (
               <InsetBox key={a.id} bordered className="px-3 py-2.5">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Pill tone={a.severity === 'critical' ? 'neg' : a.severity === 'warning' ? 'warn' : 'info'}>
-                    {String(a.type).replace(/_/g, ' ')}
-                  </Pill>
-                  <span className="text-[13px]">{a.title}</span>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Pill tone={a.severity === 'critical' ? 'neg' : a.severity === 'warning' ? 'warn' : 'info'}>
+                        {String(a.type).replace(/_/g, ' ')}
+                      </Pill>
+                      {a.platform_user_id ? (
+                        <Link href={`/investors/${a.platform_user_id}`} className="text-[13px] hover:underline">
+                          {a.title}
+                        </Link>
+                      ) : (
+                        <span className="text-[13px]">{a.title}</span>
+                      )}
+                    </div>
+                    <div className="muted text-[11px] mt-1">{timeAgo(a.created_at)}</div>
+                  </div>
+                  {/* Without this the feed only ever grew — the column existed but
+                      nothing could set it. */}
+                  <Button
+                    className="text-[11px] shrink-0"
+                    disabled={acking === a.id}
+                    onClick={() => acknowledge(a.id)}
+                    title="Acknowledge and remove from the feed"
+                  >
+                    {acking === a.id ? '…' : 'Dismiss'}
+                  </Button>
                 </div>
-                <div className="muted text-[11px] mt-1">{timeAgo(a.created_at)}</div>
               </InsetBox>
             ))}
           </div>

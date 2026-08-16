@@ -133,6 +133,78 @@
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
+  // Read state lives client-side because the platform has no notifications
+  // table — these are derived from KYC and transactions rather than stored.
+  var READ_KEY = 'vt_read_notifications';
+
+  function getReadNotificationKeys() {
+    try { return JSON.parse(localStorage.getItem(READ_KEY) || '[]'); } catch (e) { return []; }
+  }
+
+  function markNotificationsRead(keys) {
+    try {
+      var merged = getReadNotificationKeys().concat(keys || []);
+      // De-duplicate and keep the list bounded so it cannot grow forever.
+      var seen = {}, out = [];
+      merged.forEach(function (k) { if (k && !seen[k]) { seen[k] = 1; out.push(k); } });
+      localStorage.setItem(READ_KEY, JSON.stringify(out.slice(-200)));
+    } catch (e) { /* storage unavailable — badge just stays visible */ }
+  }
+
+  // Turns a transaction row into something a customer can read. The body used to
+  // be `'Status: ' + t.status`, which rendered as "Status: pending" — a field
+  // dump, not a sentence, and it never said what happens next.
+  function buildTxNotification(t) {
+    var amt = money(t.amount, t.currency);
+    var isDep = t.type === 'deposit';
+    var noun = isDep ? 'Deposit' : t.type === 'withdrawal' ? 'Withdrawal' : 'Transaction';
+
+    var copy = {
+      pending: {
+        title: noun + ' awaiting confirmation',
+        desc: isDep
+          ? amt + ' has been received and is being confirmed. It will appear in your balance once cleared.'
+          : amt + ' is queued for review. Funds stay on hold until it is approved.',
+        icon: '⏳', bg: '#fef3c7', fg: '#b45309',
+      },
+      processing: {
+        title: noun + ' in progress',
+        desc: amt + ' is being processed. This usually completes within a few minutes.',
+        icon: '⏳', bg: '#fef3c7', fg: '#b45309',
+      },
+      completed: {
+        title: isDep ? 'Funds credited' : 'Withdrawal sent',
+        desc: isDep
+          ? amt + ' has cleared and is now available in your balance.'
+          : amt + ' has been sent to your destination account.',
+        icon: isDep ? '↓' : '↑', bg: '#dcfce7', fg: '#15803d',
+      },
+      failed: {
+        title: noun + ' failed',
+        desc: amt + ' could not be processed and no funds were taken. Contact support if this repeats.',
+        icon: '⚠', bg: '#fee2e2', fg: '#b91c1c',
+      },
+      cancelled: {
+        title: noun + ' cancelled',
+        desc: amt + ' was cancelled. Nothing was charged.',
+        icon: '⊘', bg: '#f1f5f9', fg: '#475569',
+      },
+    };
+
+    var c = copy[t.status] || {
+      title: noun + ' ' + amt,
+      desc: 'This transaction is being reviewed.',
+      icon: isDep ? '↓' : '↑', bg: '#f1f5f9', fg: '#475569',
+    };
+
+    return {
+      icon: c.icon, bg: c.bg, fg: c.fg,
+      title: c.title, desc: c.desc,
+      time: fmtDate(t.created_at),
+      key: t.id + ':' + t.status,
+    };
+  }
+
   // ---------------- transaction paging ----------------
   var TX_PAGE_SIZE = 10;
   var txHistoryPage = 1;
@@ -219,27 +291,32 @@
           icon: '🛡️', bg: '#eff6ff', fg: '#2563eb',
           title: k.status === 'pending' ? 'Identity verification in review' : 'Identity verification required',
           desc: k.status === 'pending'
-            ? 'We are reviewing the documents you submitted.'
-            : 'Verify your identity to raise your limits and enable withdrawals.',
-          time: '',
+            ? 'We are reviewing the documents you submitted. Most checks finish within one business day.'
+            : k.status === 'rejected'
+              ? 'Your last submission could not be verified. Re-upload your documents to restore withdrawals.'
+              : 'Verify your identity to raise your limits and enable withdrawals.',
+          key: 'kyc:' + k.status,
+          time: k.updated_at ? fmtDate(k.updated_at) : '',
         });
       }
       (VTData.transactions || []).slice(0, 5).forEach(function (t) {
-        items.push({
-          icon: t.type === 'deposit' ? '↓' : '↑',
-          bg: t.type === 'deposit' ? '#dcfce7' : '#fee2e2',
-          fg: t.type === 'deposit' ? '#15803d' : '#b91c1c',
-          title: t.type.charAt(0).toUpperCase() + t.type.slice(1) + ' ' + money(t.amount, t.currency),
-          desc: 'Status: ' + t.status,
-          time: fmtDate(t.created_at),
-        });
+        items.push(buildTxNotification(t));
       });
+
+      // Read state is keyed by content, so an item stays read until the thing it
+      // describes actually changes — a deposit going pending -> completed is a
+      // new notification, the same deposit sitting pending is not. Previously
+      // every row was hardcoded "unread" and clearing them only stripped a CSS
+      // class, so everything came back unread on the next load.
+      var readKeys = getReadNotificationKeys();
+      var unread = items.filter(function (n) { return readKeys.indexOf(n.key) === -1; });
 
       if (!items.length) {
         list.innerHTML = '<div class="notif-item" style="color:var(--text-muted);font-size:12px;">No notifications yet.</div>';
       } else {
         list.innerHTML = items.map(function (n) {
-          return '<div class="notif-item unread">' +
+          var isUnread = readKeys.indexOf(n.key) === -1;
+          return '<div class="notif-item' + (isUnread ? ' unread' : '') + '">' +
             '<div class="notif-badge-icon" style="background:' + n.bg + '; color:' + n.fg + '">' + n.icon + '</div>' +
             '<div><div class="notif-content-title">' + esc(n.title) + '</div>' +
             '<div class="notif-content-desc">' + esc(n.desc) + '</div>' +
@@ -247,10 +324,12 @@
         }).join('');
       }
 
+      // The badge counts what is unread, not how many rows exist.
+      window.__vtNotificationKeys = items.map(function (n) { return n.key; });
       var badge = document.getElementById('notifCountBadge');
-      if (badge) badge.textContent = String(items.length);
+      if (badge) badge.textContent = String(unread.length);
       var dot = document.getElementById('notifDot');
-      if (dot) dot.style.display = items.length ? '' : 'none';
+      if (dot) dot.style.display = unread.length ? '' : 'none';
     },
 
     // The quick-trade panel advertised a fabricated "Max: 10.0 BTC" and a
@@ -528,6 +607,19 @@
   }
 
   // Expose for other scripts / login page.
+  // Replaces the CSS-only version in app.js: that one stripped the "unread"
+  // class and the badge came straight back on the next hydrate.
+  window.clearNotifications = function () {
+    markNotificationsRead(window.__vtNotificationKeys || []);
+    document.querySelectorAll('.notif-item.unread').forEach(function (el) {
+      el.classList.remove('unread');
+    });
+    var badge = document.getElementById('notifCountBadge');
+    if (badge) badge.textContent = '0';
+    var dot = document.getElementById('notifDot');
+    if (dot) dot.style.display = 'none';
+  };
+
   window.VTAuth = VTAuth;
   window.VTApi = VTApi;
 

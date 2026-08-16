@@ -125,6 +125,10 @@ function toggleHeaderDropdown(dropdownId, evt) {
     if (target) target.classList.toggle('active');
 }
 
+// Superseded by api-client.js, which loads after this file and replaces this
+// with a version that persists the read state. Kept as a fallback so the
+// onclick still works on any page that does not load the API client — but note
+// this version only clears the styling, it does not remember anything.
 function clearNotifications() {
     var items = document.querySelectorAll('.notif-item.unread');
     items.forEach(item => item.classList.remove('unread'));
@@ -807,8 +811,37 @@ function submitWithdrawal() {
 
     if (problem) { VTToast.warning('Withdrawal Error', problem); return; }
 
-    var fees = s.flat + amount * (s.pct / 100);
-    VTToast.success('Withdrawal Queued', amount.toFixed(s.dp) + ' ' + s.unit + ' via ' + wdText(s.cfg, 'name') + ' — confirm the 2FA code sent to your device.', 8000);
+    if (!window.VTActions || !window.VTAuth || !VTAuth.isAuthed()) {
+        VTToast.error('Not signed in', 'Your session has expired. Sign in again to request a withdrawal.');
+        return;
+    }
+
+    // The API only models crypto and bank. Everything else here (interac, wire,
+    // card, internal) settles through the banking rail, and the specific
+    // destination is carried in the destination string for the admin to action.
+    var apiMethod = method === 'crypto' ? 'crypto' : 'bank';
+
+    var btn = document.getElementById('withdrawSubmitBtn');
+    if (btn) { btn.disabled = true; }
+
+    VTActions.withdraw(amount, apiMethod, destination)
+        .then(function () {
+            // Withdrawals are reviewed before they pay out, so promise a review —
+            // not a dispatch, and not a 2FA code that nothing sends.
+            VTToast.success(
+                'Withdrawal requested',
+                amount.toFixed(s.dp) + ' ' + s.unit + ' via ' + wdText(s.cfg, 'name')
+                    + ' — submitted for review. You can follow it in your transaction history.',
+                8000
+            );
+            if (typeof switchPageView === 'function') switchPageView('transaction-history');
+        })
+        .catch(function (e) {
+            VTToast.error('Withdrawal failed', (e && e.message) || 'The request could not be submitted. Please try again.');
+        })
+        .then(function () {
+            if (btn) btn.disabled = false;
+        });
 }
 
 // ---------- PAYMENT DETAILS ----------
@@ -825,8 +858,82 @@ function removeWhitelistAddress(btn) {
 }
 
 // ---------- TRANSACTION HISTORY ----------
+// Builds the statement from the transactions already loaded for this user and
+// hands it straight to the browser. It used to claim the file "will be emailed
+// when ready" — nothing was generated and nothing was ever sent.
 function exportStatement(format) {
-    VTToast.success('Export Queued', String(format).toUpperCase() + ' statement will be emailed when ready.');
+    var txns = (window.VTData && VTData.transactions) || [];
+    if (!txns.length) {
+        VTToast.warning('Nothing to export', 'You have no transactions yet.');
+        return;
+    }
+
+    var cur = (VTData.balances && VTData.balances.summary.currency) || 'CAD';
+    var stamp = new Date().toISOString().slice(0, 10);
+    var cols = ['Date', 'Transaction ID', 'Type', 'Asset', 'Amount', 'Currency', 'Status', 'Reference'];
+
+    var rows = txns.map(function (t) {
+        return [
+            new Date(t.created_at).toISOString(),
+            t.id,
+            t.type,
+            t.asset || cur,
+            Number(t.amount).toFixed(2),
+            t.currency || cur,
+            t.status,
+            t.reference || '',
+        ];
+    });
+
+    if (String(format).toLowerCase() === 'pdf') {
+        // No PDF engine is bundled, so open a print-ready view and let the
+        // browser produce the PDF. That is a real document, not a promise.
+        var win = window.open('', '_blank');
+        if (!win) {
+            VTToast.warning('Popup blocked', 'Allow popups for this site to export a PDF statement.');
+            return;
+        }
+        var esc = function (s) {
+            return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+            });
+        };
+        win.document.write(
+            '<!DOCTYPE html><html><head><meta charset="utf-8"><title>VT Markets statement ' + stamp + '</title>'
+            + '<style>body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;padding:32px;color:#111}'
+            + 'h1{font-size:18px;margin:0 0 4px}p.meta{color:#666;font-size:12px;margin:0 0 20px}'
+            + 'table{border-collapse:collapse;width:100%;font-size:11px}'
+            + 'th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}th{background:#f4f4f5}</style></head><body>'
+            + '<h1>VT Markets — account statement</h1>'
+            + '<p class="meta">Generated ' + esc(stamp) + ' · ' + txns.length + ' transactions</p>'
+            + '<table><thead><tr>' + cols.map(function (c) { return '<th>' + esc(c) + '</th>'; }).join('') + '</tr></thead><tbody>'
+            + rows.map(function (r) { return '<tr>' + r.map(function (c) { return '<td>' + esc(c) + '</td>'; }).join('') + '</tr>'; }).join('')
+            + '</tbody></table></body></html>'
+        );
+        win.document.close();
+        win.focus();
+        win.print();
+        VTToast.success('Statement ready', 'Your print dialog is open — choose "Save as PDF" to keep a copy.');
+        return;
+    }
+
+    var csvCell = function (v) {
+        var s = String(v == null ? '' : v);
+        return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    };
+    var csv = [cols.join(',')].concat(rows.map(function (r) { return r.map(csvCell).join(','); })).join('\r\n');
+
+    var blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'vtmarkets-statement-' + stamp + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+
+    VTToast.success('Statement downloaded', txns.length + ' transactions exported to CSV.');
 }
 
 // UPGRADED FUNDS INTERACTIVE HANDLERS

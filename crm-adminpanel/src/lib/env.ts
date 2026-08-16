@@ -56,7 +56,10 @@ export const env = {
     url: process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000',
   },
   alerts: {
-    largeTxnThreshold: parseFloat(process.env.ALERT_LARGE_TXN_THRESHOLD ?? '25000'),
+    // 25000 meant a desk doing ordinary business saw no transaction alerts at
+    // all. This is the "unusually large, look now" line, not the visibility
+    // line — every transaction state change raises its own alert regardless.
+    largeTxnThreshold: parseFloat(process.env.ALERT_LARGE_TXN_THRESHOLD ?? '5000'),
     dormantDays: parseInt(process.env.ALERT_DORMANT_DAYS ?? '14', 10),
     kycSlaHours: parseInt(process.env.ALERT_KYC_SLA_HOURS ?? '48', 10),
   },

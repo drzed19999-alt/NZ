@@ -9,7 +9,7 @@ import { getSetting } from '@/lib/settings';
 
 type AlertType =
   | 'large_deposit' | 'large_withdrawal' | 'dormant' | 'kyc_sla' | 'suspicious'
-  | 'checkout_waiting';
+  | 'checkout_waiting' | 'deposit_settled' | 'transaction_failed' | 'transaction_reversed';
 
 interface CreateAlertInput {
   type: AlertType;
@@ -103,6 +103,66 @@ export async function evaluateCheckoutWaiting(evt: {
     data: evt,
   });
   return true;
+}
+
+/**
+ * A transaction changing state is the event a desk actually waits on. The CRM
+ * previously only alerted when one was *created*, so you were told money had
+ * been attempted and never that it arrived, failed or was clawed back.
+ *
+ * Amount is irrelevant to whether these matter, so unlike the large_* rules
+ * these fire on every transaction.
+ */
+export async function evaluateTransactionUpdated(evt: {
+  user_id: string;
+  type: string;
+  status: string;
+  amount: number;
+  currency?: string;
+  id?: string;
+}): Promise<void> {
+  const money = `${Number(evt.amount).toLocaleString()} ${evt.currency ?? 'CAD'}`;
+  const noun = evt.type === 'deposit' ? 'Deposit' : evt.type === 'withdrawal' ? 'Withdrawal' : 'Transaction';
+
+  if (evt.status === 'completed') {
+    await createAlert({
+      type: 'deposit_settled',
+      severity: 'info',
+      platform_user_id: evt.user_id,
+      title: `${noun} settled: ${money}`,
+      data: evt,
+    });
+    return;
+  }
+
+  if (evt.status === 'failed' || evt.status === 'cancelled') {
+    await createAlert({
+      type: 'transaction_failed',
+      // A failed withdrawal is a customer who cannot get their money out — that
+      // needs someone to look, not a passive info badge.
+      severity: evt.type === 'withdrawal' ? 'critical' : 'warning',
+      platform_user_id: evt.user_id,
+      title: `${noun} ${evt.status}: ${money}`,
+      data: evt,
+    });
+  }
+}
+
+/** A reversal moves money back out of an account — always worth surfacing. */
+export async function evaluateTransactionReversed(evt: {
+  user_id: string;
+  type?: string;
+  amount: number;
+  currency?: string;
+  id?: string;
+}): Promise<void> {
+  await createAlert({
+    type: 'transaction_reversed',
+    severity: 'critical',
+    platform_user_id: evt.user_id,
+    title: `Transaction reversed: ${Number(evt.amount).toLocaleString()} ${evt.currency ?? 'CAD'}`,
+    data: evt,
+  });
 }
 
 export async function evaluateKycEvent(evt: { user_id: string; status: string; level?: number }): Promise<void> {
