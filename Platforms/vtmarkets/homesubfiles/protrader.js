@@ -205,21 +205,26 @@
             B.demo = true;
             B.capital = DEMO_CAPITAL;
         }
+        // This engine generates its results locally (see the note at the top of
+        // this file) — it places no orders and moves no money. The badge said
+        // "LIVE CAPITAL" and the note promised "realised profit is credited back"
+        // as soon as an account was funded, which told a funded user their real
+        // balance was being traded. It always says simulation, because it always
+        // is one; the demo/funded split only changes the capital figure shown.
         var badge = el('botCapitalMode');
         if (badge) {
-            badge.textContent = B.demo ? (lang() === 'fr' ? 'DÉMO' : lang() === 'es' ? 'DEMO' : 'DEMO')
-                                       : (lang() === 'fr' ? 'CAPITAL RÉEL' : lang() === 'es' ? 'CAPITAL REAL' : 'LIVE CAPITAL');
-            badge.className = 'cap-mode ' + (B.demo ? 'demo' : 'live');
+            badge.textContent = lang() === 'fr' ? 'SIMULATION' : lang() === 'es' ? 'SIMULACIÓN' : 'SIMULATION';
+            badge.className = 'cap-mode demo';
         }
         var note = el('botCapitalNote');
         if (note) {
             note.textContent = B.demo
-                ? (lang() === 'fr' ? 'Compte non financé — simulation sur 25 000 $. Déposez pour activer le capital réel.'
-                  : lang() === 'es' ? 'Cuenta sin fondos — simulación sobre 25 000 $. Deposita para activar capital real.'
-                  : 'Account unfunded — simulating on $25,000. Deposit to trade live capital.')
-                : (lang() === 'fr' ? 'Le bot négocie le solde de votre compte. Les gains réalisés y sont crédités.'
-                  : lang() === 'es' ? 'El bot opera el saldo de tu cuenta. Las ganancias realizadas se abonan ahí.'
-                  : 'The bot trades your account balance. Realised profit is credited back to it.');
+                ? (lang() === 'fr' ? 'Simulation de stratégie sur 25 000 $. Aucun ordre réel n’est placé et aucun fonds n’est engagé.'
+                  : lang() === 'es' ? 'Simulación de estrategia sobre 25 000 $. No se coloca ninguna orden real ni se compromete ningún fondo.'
+                  : 'Strategy simulation on $25,000. No real orders are placed and no funds are committed.')
+                : (lang() === 'fr' ? 'Simulation de stratégie dimensionnée sur votre solde. Aucun ordre réel n’est placé — les résultats sont hypothétiques et votre solde n’est pas affecté.'
+                  : lang() === 'es' ? 'Simulación de estrategia dimensionada a tu saldo. No se coloca ninguna orden real: los resultados son hipotéticos y tu saldo no se ve afectado.'
+                  : 'Strategy simulation sized to your balance. No real orders are placed — results are hypothetical and your balance is not affected.');
         }
     }
 
