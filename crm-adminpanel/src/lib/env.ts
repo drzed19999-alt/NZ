@@ -61,11 +61,12 @@ export const env = {
     kycSlaHours: parseInt(process.env.ALERT_KYC_SLA_HOURS ?? '48', 10),
   },
   checkout: {
-    // 'manual'       — hold the customer on the processing screen until an admin
-    //                  picks a destination (the existing behaviour).
-    // 'auto_history' — release them to deposit history as soon as the deposit is
-    //                  recorded; no one has to be watching for it.
-    redirectMode: process.env.CHECKOUT_REDIRECT_MODE === 'auto_history' ? 'auto_history' : 'manual',
+    // 'auto_history' — release the customer to their transaction history as soon
+    //                  as the deposit is recorded. The default: nobody should be
+    //                  left on a spinner because no admin happened to be watching.
+    // 'manual'       — hold them on the processing screen until an admin picks a
+    //                  destination, via Settings -> Checkout redirect control.
+    redirectMode: process.env.CHECKOUT_REDIRECT_MODE === 'manual' ? 'manual' : 'auto_history',
   },
 };
 

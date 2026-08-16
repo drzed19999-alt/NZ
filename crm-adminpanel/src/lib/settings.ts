@@ -44,8 +44,8 @@ export const EDITABLE_SETTINGS = {
       + 'straight to deposit history without waiting for an admin.',
     type: 'select' as const,
     options: [
-      { value: 'manual', label: 'Admin decides (hold on processing screen)' },
-      { value: 'auto_history', label: 'Release automatically to deposit history' },
+      { value: 'auto_history', label: 'Send to transaction history automatically (default)' },
+      { value: 'manual', label: 'Hold on processing screen until an admin decides' },
     ],
     fallback: () => env.checkout.redirectMode,
   },
