@@ -16,7 +16,7 @@
 
     // The deployed API origin. No trailing slash.
     // Example: 'https://nz-api.vercel.app'
-    var PRODUCTION_API_BASE = 'https://REPLACE-WITH-YOUR-API.vercel.app';
+    var PRODUCTION_API_BASE = 'https://nz-api.vercel.app';
 
     var LOCAL_API_BASE = 'http://localhost:4000';
 
