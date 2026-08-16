@@ -36,7 +36,7 @@ export default function LeadDetailPage() {
     api.get('/api/admins').then((r) => setAdmins(r.admins)).catch(() => {});
   }, [load]);
 
-  if (!data) return <PageLoader label="Opening lead" />;
+  if (!data) return <PageLoader label="Opening client" />;
   const lead = data.lead;
 
   async function patch(patch: any) {
@@ -52,11 +52,11 @@ export default function LeadDetailPage() {
 
   return (
     <div className="space-y-4 animate-in">
-      <BackLink href="/leads">Back to leads</BackLink>
+      <BackLink href="/leads">Back to clients</BackLink>
 
       <PageHeader
         align="start"
-        title={lead.full_name || lead.email || 'Unnamed lead'}
+        title={lead.full_name || lead.email || 'Unnamed client'}
         subtitle={<>
           {lead.email} {lead.phone && `· ${lead.phone}`} · <span className="capitalize">{lead.source}</span>
           {lead.meta_campaign && ` · ${lead.meta_campaign}`}
@@ -70,7 +70,7 @@ export default function LeadDetailPage() {
             <Link className="btn-primary" href={`/investors/${lead.platform_user_id}`}>View investor →</Link>
           ) : (
             <Button variant="primary" onClick={() => setConvertOpen(true)} disabled={busy || !lead.email}>
-              Convert to user
+              Create trading account
             </Button>
           )}
         </>}
@@ -143,7 +143,7 @@ export default function LeadDetailPage() {
       {deleteOpen && (
         <DeleteLeadModal
           leadId={id}
-          name={lead.full_name || lead.email || 'this lead'}
+          name={lead.full_name || lead.email || 'this client'}
           onClose={() => setDeleteOpen(false)}
           onDeleted={() => router.push('/leads')}
         />

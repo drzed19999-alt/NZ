@@ -82,9 +82,9 @@ export default function DashboardPage() {
     { label: 'Online now', value: stats?.platform?.online_now ?? na, live: true },
   ];
   const secondary = [
-    { label: 'Total leads', value: stats?.leads.total ?? '—' },
-    { label: 'New leads', value: stats?.leads.new ?? '—' },
-    { label: 'Converted', value: stats?.leads.converted ?? '—' },
+    { label: 'Total clients', value: stats?.leads.total ?? '—' },
+    { label: 'New clients', value: stats?.leads.new ?? '—' },
+    { label: 'Investors', value: stats?.leads.converted ?? '—' },
     { label: 'KYC pending', value: stats?.platform?.kyc_pending ?? na },
     { label: 'Open alerts', value: stats?.open_alerts ?? '—' },
   ];
@@ -104,15 +104,15 @@ export default function DashboardPage() {
       <StatStrip items={secondary} />
 
       <div className="grid lg:grid-cols-2 gap-4">
-        <Panel lux padding="p-5" title="Recent leads" eyebrow="Live feed"
+        <Panel lux padding="p-5" title="Recent clients" eyebrow="Live feed"
           action={<PanelLink href="/leads">View all →</PanelLink>}>
           <div className="space-y-0.5">
             {feedLoading && <SkeletonList rows={5} />}
-            {!feedLoading && leads.length === 0 && <div className="muted text-[13px] py-6 text-center">No leads yet.</div>}
+            {!feedLoading && leads.length === 0 && <div className="muted text-[13px] py-6 text-center">No clients yet.</div>}
             {!feedLoading && leads.map((l) => (
               <Link key={l.id} href={`/leads/${l.id}`} className="block rounded-[10px] px-3 py-2.5 row-hover">
                 <FeedRow
-                  title={l.full_name || l.email || 'Unnamed lead'}
+                  title={l.full_name || l.email || 'Unnamed client'}
                   meta={<>{l.email} · <span className="capitalize">{l.source}</span> · {timeAgo(l.created_at)}</>}
                   trailing={<StatusBadge status={l.status} />}
                 />

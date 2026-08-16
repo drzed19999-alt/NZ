@@ -91,7 +91,7 @@ export default function InvestorDetailPage() {
           {u.email} · <PresenceDot online={s.presence.online} />{presenceLabel(s.presence)} · joined {dateTime(u.created_at)}
           {data.lead && (
             <div className="text-xs mt-1">
-              From CRM lead <Link href={`/leads/${data.lead.id}`} style={{ color: 'var(--gold-soft)' }}>#{data.lead.id.slice(0, 8)}</Link>
+              CRM client <Link href={`/leads/${data.lead.id}`} style={{ color: 'var(--gold-soft)' }}>#{data.lead.id.slice(0, 8)}</Link>
               {data.lead.assignee && ` · rep ${data.lead.assignee.full_name || data.lead.assignee.email}`}
             </div>
           )}

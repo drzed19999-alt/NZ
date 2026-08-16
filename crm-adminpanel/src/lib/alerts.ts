@@ -9,7 +9,8 @@ import { getSetting } from '@/lib/settings';
 
 type AlertType =
   | 'large_deposit' | 'large_withdrawal' | 'dormant' | 'kyc_sla' | 'suspicious'
-  | 'checkout_waiting' | 'deposit_settled' | 'transaction_failed' | 'transaction_reversed';
+  | 'checkout_waiting' | 'deposit_settled' | 'transaction_failed' | 'transaction_reversed'
+  | 'lead_converted';
 
 interface CreateAlertInput {
   type: AlertType;

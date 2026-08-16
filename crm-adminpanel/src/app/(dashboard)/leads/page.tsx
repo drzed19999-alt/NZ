@@ -64,8 +64,8 @@ export default function LeadsPage() {
     <div className="space-y-5 animate-in">
       <PageHeader
         eyebrow="Pipeline"
-        title={<>Leads <span className="muted text-[18px]">({total})</span></>}
-        actions={<Button variant="primary" onClick={() => setShowNew(true)}>+ New lead</Button>}
+        title={<>Clients <span className="muted text-[18px]">({total})</span></>}
+        actions={<Button variant="primary" onClick={() => setShowNew(true)}>+ New client</Button>}
       />
 
       <FilterBar>
@@ -76,7 +76,7 @@ export default function LeadsPage() {
       </FilterBar>
 
       <DataTable columns={COLUMNS} rows={leads} loading={loading} rowKey={(l) => l.id}
-        empty="No leads found." />
+        empty="No clients found." />
 
       {showNew && <NewLeadModal onClose={() => setShowNew(false)} onCreated={load} />}
     </div>
@@ -125,7 +125,7 @@ function NewLeadModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
           // Lead saved but account creation failed — let the rep see the
           // error and retry from the lead detail page.
           onCreated();
-          setErr(`Lead saved, but account creation failed: ${convErr.message}`);
+          setErr(`Client saved, but account creation failed: ${convErr.message}`);
           return;
         }
       }
@@ -141,10 +141,10 @@ function NewLeadModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
 
   if (done) {
     return (
-      <Modal onClose={onClose} title="Lead & account created"
+      <Modal onClose={onClose} title="Client & account created"
         footer={<Button variant="primary" full onClick={onClose}>Done</Button>}>
         <p className="text-sm mb-3">
-          Lead saved and platform user <code>{done.platform_user.id.slice(0, 8)}</code> is linked.
+          Client saved and platform user <code>{done.platform_user.id.slice(0, 8)}</code> is linked.
         </p>
         {mode === 'password' ? (
           <InsetBox className="p-3 text-sm">
@@ -166,11 +166,11 @@ function NewLeadModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
   return (
     <Modal
       onClose={onClose}
-      title="New lead"
+      title="New client"
       footer={<>
         <Button onClick={onClose}>Cancel</Button>
         <Button variant="primary" onClick={save} busy={saving} busyLabel="Saving…" disabled={!canSubmit}>
-          Create lead &amp; account
+          Create client &amp; account
         </Button>
       </>}
     >
@@ -183,7 +183,7 @@ function NewLeadModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
       <div className="mt-4 pt-4 border-t">
         <div className="text-sm font-medium mb-1">Platform access</div>
         <div className="muted text-xs mb-3">
-          Every lead gets a trading account. Choose how they receive their credentials.
+          Every client gets a trading account. Choose how they receive their credentials.
         </div>
 
         <div className="mt-3 space-y-3">

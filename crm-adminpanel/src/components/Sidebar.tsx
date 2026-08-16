@@ -9,7 +9,8 @@ import { BRAND } from '@/lib/brand';
 
 const NAV: { href: string; label: string; icon: JSX.Element; perm?: Parameters<typeof can>[1] }[] = [
   { href: '/', label: 'Dashboard', icon: <Icon d="M3 12h7V3H3v9Zm0 9h7v-7H3v7Zm11 0h7V12h-7v9Zm0-18v7h7V3h-7Z" /> },
-  { href: '/leads', label: 'Leads', icon: <Icon d="M4 4h16v4H4V4Zm0 6h16v4H4v-4Zm0 6h10v4H4v-4Z" />, perm: 'lead.read' },
+  { href: '/directory', label: 'Directory', icon: <Icon d="M4 4h16v4H4V4Zm0 6h16v4H4v-4Zm0 6h16v4H4v-4Z" />, perm: 'lead.read' },
+  { href: '/leads', label: 'Clients', icon: <Icon d="M4 4h16v4H4V4Zm0 6h16v4H4v-4Zm0 6h10v4H4v-4Z" />, perm: 'lead.read' },
   { href: '/investors', label: 'Investors', icon: <Icon d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 5a3 3 0 1 1 0 6 3 3 0 0 1 0-6Zm0 13a8 8 0 0 1-5.7-2.4c.6-2 3-3.1 5.7-3.1s5.1 1.1 5.7 3.1A8 8 0 0 1 12 20Z" />, perm: 'investor.read' },
   { href: '/admins', label: 'Team', icon: <Icon d="M16 11a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm-8 1a3 3 0 1 0-3-3 3 3 0 0 0 3 3Zm0 2c-2.7 0-6 1.3-6 4v3h8v-3c0-1.1.5-2.1 1.3-2.9A9.7 9.7 0 0 0 8 14Zm8 0c-3 0-6 1.5-6 4.2V21h12v-2.8c0-2.7-3-4.2-6-4.2Z" />, perm: 'admin.manage' },
   { href: '/audit', label: 'Audit', icon: <Icon d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Zm2 16H8v-2h8v2Zm0-4H8v-2h8v2Zm-3-5V3.5L18.5 9H13Z" />, perm: 'audit.read' },

@@ -3,9 +3,10 @@ import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { env } from '@/lib/env';
 import { touchCacheFromEvent } from '@/lib/investors';
+import { promoteToInvestorOnDeposit } from '@/lib/leads';
 import {
   evaluateTransactionEvent, evaluateKycEvent, evaluateCheckoutWaiting,
-  evaluateTransactionUpdated, evaluateTransactionReversed,
+  evaluateTransactionUpdated, evaluateTransactionReversed, createAlert,
 } from '@/lib/alerts';
 import { getSetting } from '@/lib/settings';
 import { platform } from '@/lib/crypto-platform/client';
@@ -105,6 +106,22 @@ export async function POST(req: Request) {
         user_id: userId!, type: data.type, status: data.status,
         amount: Number(data.amount), currency: data.currency, id: data.id,
       });
+
+      // A confirmed deposit is what turns a client into an investor. Money has
+      // actually landed at this point — an admin had to move the transaction to
+      // 'completed' for this to fire.
+      if (userId && data.type === 'deposit' && data.status === 'completed') {
+        const promoted = await promoteToInvestorOnDeposit(userId);
+        if (promoted) {
+          await createAlert({
+            type: 'lead_converted',
+            severity: 'info',
+            platform_user_id: userId,
+            title: `Client became an investor: first deposit of ${Number(data.amount).toLocaleString()} ${data.currency ?? 'CAD'} confirmed`,
+            data: { user_id: userId, amount: data.amount, currency: data.currency },
+          });
+        }
+      }
     } else if (event === 'transaction.reversed') {
       await evaluateTransactionReversed({
         user_id: userId!, type: data.type,
