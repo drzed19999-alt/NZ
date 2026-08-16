@@ -170,7 +170,10 @@ function ConvertModal({ leadId, email, onClose, onDone }: any) {
   async function submit() {
     setBusy(true); setErr(null);
     try {
-      const body: any = { send_activation_email: mode === 'email' };
+      // This is the deliberate "convert this lead" action on the lead itself, so
+      // it does move the pipeline stage. Creating an account from the New Lead
+      // form does not — see mark_converted in convertSchema.
+      const body: any = { send_activation_email: mode === 'email', mark_converted: true };
       if (mode === 'password') {
         body.password = password;
         // The rep hands this password over as-is; the API defaults this to true,

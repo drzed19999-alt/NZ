@@ -48,6 +48,14 @@ export const convertSchema = z.object({
   // Optional: set the login password directly (rep onboarding the client).
   password: z.string().min(8).optional(),
   require_password_change: z.boolean().default(true),
+  // Whether to also move the lead to the 'converted' pipeline stage.
+  //
+  // Having a platform account and being a converted lead are different facts:
+  // the first means the person can log in, the second is a sales judgement the
+  // rep owns. Creating an account used to force the status, which silently
+  // dropped brand-new leads out of the active pipeline. Defaults to false so
+  // the status only ever changes when someone asks for it.
+  mark_converted: z.boolean().default(false),
 });
 
 export const sendEmailSchema = z.object({

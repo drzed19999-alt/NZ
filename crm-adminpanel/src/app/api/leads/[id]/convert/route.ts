@@ -71,15 +71,24 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
     // Record the link on the CRM side (service role: this crosses the
     // converted-status transition and must always persist).
+    //
+    // The link itself is a fact and is always written. The pipeline status is
+    // not: creating an account no longer implies the lead is converted, so the
+    // stage only moves when the caller explicitly asks.
     const adminDb = createAdminClient();
-    await adminDb
-      .from('leads')
-      .update({ platform_user_id: platformUser.id, status: 'converted', converted_at: new Date().toISOString() })
-      .eq('id', lead.id);
+    const patch: Record<string, unknown> = { platform_user_id: platformUser.id };
+    if (input.mark_converted) {
+      patch.status = 'converted';
+      patch.converted_at = new Date().toISOString();
+    }
+    await adminDb.from('leads').update(patch).eq('id', lead.id);
 
-    await recordLeadHistory(lead.id, admin.id, 'converted', {
+    // Name the event for what actually happened — logging 'converted' when the
+    // pipeline stage never moved would make the timeline lie.
+    await recordLeadHistory(lead.id, admin.id, input.mark_converted ? 'converted' : 'platform_account_created', {
       platform_user_id: platformUser.id,
       linked: Boolean(input.link_to_user_id),
+      marked_converted: input.mark_converted,
     });
     await audit(admin, 'lead.convert', {
       entityType: 'lead', entityId: lead.id,
