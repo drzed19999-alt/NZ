@@ -159,34 +159,25 @@ var viewsContainer = {
 
         <!-- ACTIVE SESSIONS & DEVICE MANAGER -->
         <div class="markets-section">
-            <div style="font-size:16px; font-weight:800; color:var(--text-dark); margin-bottom:16px;">Active Devices & Authorized Sessions</div>
-            
+            <div style="font-size:16px; font-weight:800; color:var(--text-dark);">Recent account activity</div>
+            <div style="font-size:11px; color:var(--text-muted); margin-bottom:16px;">
+                Sign-ins and security changes on your account. Contact support if you see something you do not recognise.
+            </div>
+
             <div class="table-responsive-wrapper">
                 <table class="markets-table">
                     <thead>
                         <tr>
-                            <th>Device / Browser</th>
+                            <th>Event</th>
                             <th>IP Address</th>
-                            <th>Location</th>
-                            <th>Last Active</th>
-                            <th>Action</th>
+                            <th>Device</th>
+                            <th>When</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr>
-                            <td style="font-weight:700;">Chrome 128 (Windows 11 Pro)</td>
-                            <td style="font-family:'JetBrains Mono',monospace;">185.220.101.4</td>
-                            <td>London, UK 🇬🇧</td>
-                            <td><span class="change-pill pos">Current Session</span></td>
-                            <td><span style="color:#94a3b8; font-size:11px;">Active Now</span></td>
-                        </tr>
-                        <tr>
-                            <td style="font-weight:700;">VT Markets App (iOS 18 Pro)</td>
-                            <td style="font-family:'JetBrains Mono',monospace;">82.165.92.14</td>
-                            <td>Frankfurt, DE 🇩🇪</td>
-                            <td style="color:var(--text-muted);">2 hours ago</td>
-                            <td><button class="btn-trade-row" style="background:#fee2e2; color:#ef4444;" onclick="VTToast.warning('Session Revoked', 'Device session has been terminated.')">Revoke Session</button></td>
-                        </tr>
+                    <!-- Rendered from /api/me/activity by VTHydrate.securityActivity().
+                         Previously two invented sessions with fabricated IPs and cities. -->
+                    <tbody id="securityActivityBody">
+                        <tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px;">Loading…</td></tr>
                     </tbody>
                 </table>
             </div>

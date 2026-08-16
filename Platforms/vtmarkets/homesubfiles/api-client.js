@@ -332,6 +332,65 @@
       if (dot) dot.style.display = unread.length ? '' : 'none';
     },
 
+    // Real sign-in / security history from /api/me/activity. Replaces two
+    // invented "active sessions" with fabricated IPs and cities.
+    securityActivity: function (root) {
+      var tbody = (root || document).querySelector('#securityActivityBody');
+      if (!tbody) return;
+
+      // Only security-relevant events; deposits and trades have their own views.
+      var LABELS = {
+        login: 'Signed in',
+        logout: 'Signed out',
+        account_created: 'Account created',
+        password_set: 'Password changed',
+        password_changed: 'Password changed',
+        status_changed: 'Account status changed',
+        kyc_override: 'Identity verification updated',
+        kyc_update: 'Identity documents submitted',
+        api_key_created: 'API key created',
+        api_key_revoked: 'API key revoked',
+        crm_linked: 'Account linked',
+      };
+
+      // Full UA strings are noise in a table; name the browser and OS.
+      function device(ua) {
+        if (!ua) return '—';
+        var browser = /Edg\//.test(ua) ? 'Edge'
+          : /Chrome\//.test(ua) ? 'Chrome'
+          : /Firefox\//.test(ua) ? 'Firefox'
+          : /Safari\//.test(ua) ? 'Safari' : 'Browser';
+        var os = /Windows/.test(ua) ? 'Windows'
+          : /iPhone|iPad/.test(ua) ? 'iOS'
+          : /Android/.test(ua) ? 'Android'
+          : /Mac OS X/.test(ua) ? 'macOS'
+          : /Linux/.test(ua) ? 'Linux' : '';
+        return os ? browser + ' · ' + os : browser;
+      }
+
+      VTApi.get('/api/me/activity?limit=25', true)
+        .then(function (r) {
+          var rows = (r.activity || []).filter(function (a) { return LABELS[a.event]; });
+          if (!rows.length) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px;">'
+              + 'No account activity recorded yet.</td></tr>';
+            return;
+          }
+          tbody.innerHTML = rows.map(function (a) {
+            return '<tr>' +
+              '<td style="font-weight:700;">' + esc(LABELS[a.event]) + '</td>' +
+              '<td style="font-family:\'JetBrains Mono\',monospace;">' + esc(a.ip || '—') + '</td>' +
+              '<td style="color:var(--text-muted);">' + esc(device(a.user_agent)) + '</td>' +
+              '<td style="color:var(--text-muted);font-size:11px;">' + fmtDate(a.created_at) + '</td>' +
+              '</tr>';
+          }).join('');
+        })
+        .catch(function () {
+          tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px;">'
+            + 'Could not load your account activity.</td></tr>';
+        });
+    },
+
     // Real API keys from /api/me/api-keys. The table used to ship two invented
     // keys with fabricated IP whitelists and a Revoke button that only toasted.
     apiKeys: function (root) {
@@ -386,7 +445,11 @@
     view: function (viewId) {
       var root = document.getElementById('view-' + viewId);
       if (!root) return;
-      if (viewId === 'account') { VTHydrate.account(root); VTHydrate.apiKeys(root); }
+      if (viewId === 'account') {
+        VTHydrate.account(root);
+        VTHydrate.apiKeys(root);
+        VTHydrate.securityActivity(root);
+      }
       // Always land on page 1 when the view is opened, rather than resuming
       // whatever page was last viewed in a previous visit.
       if (viewId === 'transaction-history' || viewId === 'transactionHistory') VTHydrate.txHistory(root, 1);

@@ -223,6 +223,22 @@ router.patch('/bot', asyncHandler(async (req, res) => {
   res.json({ bot: serialize.botConfig(bot, req.user.id) });
 }));
 
+// --- Security activity ------------------------------------------------------
+// Real sign-in and account history for the signed-in user. The account page
+// used to show two invented "active sessions" with fabricated IPs and cities.
+// Auth here is stateless JWT with no session store, so there is nothing to
+// revoke per device — what can be shown honestly is what actually happened.
+router.get('/activity', asyncHandler(async (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit || '20', 10), 100);
+  const { rows } = await db.query(
+    `select event, ip, user_agent, data, created_at
+       from activity_log where user_id = $1
+      order by created_at desc limit $2`,
+    [req.user.id, limit]
+  );
+  res.json({ activity: rows });
+}));
+
 // --- API keys (customer side) ----------------------------------------------
 // The user_api_keys table has existed since the beginning with no routes behind
 // it, so the UI shipped two invented keys and a Revoke button that only raised a
