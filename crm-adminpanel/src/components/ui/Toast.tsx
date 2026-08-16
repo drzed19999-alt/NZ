@@ -1,7 +1,8 @@
 'use client';
 
-import { createContext, useCallback, useContext, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { playChime, warmAudio } from '@/lib/sound';
 
 type Tone = 'success' | 'error' | 'info' | 'warning';
 
@@ -45,9 +46,14 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     setItems((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
+  // Arm the audio context on the first gesture so the first alert that matters
+  // is audible; browsers refuse to play before any user interaction.
+  useEffect(() => { warmAudio(); }, []);
+
   const toast = useCallback((tone: Tone, title: string, message?: string, duration = 5000) => {
     const id = ++nextId;
     setItems((prev) => [...prev, { id, tone, title, message, duration }]);
+    playChime(tone);
     if (duration > 0) setTimeout(() => remove(id), duration);
   }, [remove]);
 

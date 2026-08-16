@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { api } from '@/lib/api';
 import { timeAgo, compactMoney } from '@/lib/format';
+import { playChime, warmAudio } from '@/lib/sound';
 import {
   Button, FeedRow, InsetBox, PageHeader, Panel, PanelLink, Pill, SkeletonList, SkeletonStats,
   StatGrid, StatStrip, StatusBadge, type StatItem,
@@ -55,11 +56,19 @@ export default function DashboardPage() {
     loadLive();
 
     // Live dashboard: Supabase realtime pushes new leads/alerts without polling.
+    warmAudio();
     const supabase = createClient();
     const channel = supabase
       .channel('dashboard')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, loadLive)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'alerts' }, loadLive)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'alerts' }, (payload) => {
+        // A new alert is the one thing here worth hearing across the room.
+        const sev = (payload.new as any)?.severity;
+        playChime(sev === 'critical' ? 'error' : sev === 'warning' ? 'warning' : 'info');
+        loadLive();
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'alerts' }, loadLive)
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'alerts' }, loadLive)
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };

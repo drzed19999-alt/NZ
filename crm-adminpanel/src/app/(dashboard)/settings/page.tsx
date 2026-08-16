@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
+import { isMuted, setMuted, playChime } from '@/lib/sound';
 import {
   Button, CodeBlock, ConfiguredPill, Field, Notice, PageHeader, PageLoader, Panel, Select, TextInput,
 } from '@/components/ui';
@@ -17,6 +18,19 @@ interface EffectiveSetting {
 }
 
 export default function SettingsPage() {
+  // Read on mount rather than during render: localStorage is not available
+  // during the server pass and would break hydration.
+  const [soundOn, setSoundOn] = useState(true);
+  useEffect(() => { setSoundOn(!isMuted()); }, []);
+
+  function toggleSound() {
+    const nextOn = !soundOn;
+    setMuted(!nextOn);
+    setSoundOn(nextOn);
+    // Confirm audibly when switching on; silence is its own confirmation off.
+    if (nextOn) playChime('success');
+  }
+
   const [data, setData] = useState<any>(null);
   const [err, setErr] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
@@ -96,6 +110,27 @@ export default function SettingsPage() {
               )}
             </div>
           ))}
+        </div>
+      </Panel>
+
+      {/* Per-browser preference, not a shared setting — it belongs to whoever is
+          sitting at this machine, so it lives in localStorage rather than the DB. */}
+      <Panel padding="p-5" title="Notification sound"
+        description="Plays a short chime for alerts and confirmations. Stored per browser.">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <div className="text-sm font-medium">{soundOn ? 'Sound is on' : 'Sound is muted'}</div>
+            <div className="muted text-xs mt-0.5">
+              Browsers stay silent until you interact with the page, so the first chime after a
+              fresh load may not play.
+            </div>
+          </div>
+          <div className="flex gap-2 shrink-0">
+            <Button onClick={() => { playChime('success'); }}>Test</Button>
+            <Button variant="primary" onClick={toggleSound}>
+              {soundOn ? 'Mute' : 'Unmute'}
+            </Button>
+          </div>
         </div>
       </Panel>
 

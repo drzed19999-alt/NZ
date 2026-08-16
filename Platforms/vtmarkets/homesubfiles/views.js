@@ -78,6 +78,36 @@ var viewsContainer = {
             </div>
         </div>
 
+        <!-- RECENT TRANSACTIONS (wallet view) -->
+        <div class="markets-section">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+                <div>
+                    <div style="font-size:16px; font-weight:800; color:var(--text-dark);" data-i18n="walletTxTitle">Recent transactions</div>
+                    <div style="font-size:11px; color:var(--text-muted);" data-i18n="walletTxSub">Your latest deposits, withdrawals and transfers.</div>
+                </div>
+                <a href="javascript:void(0)" onclick="switchPageView('transaction-history')" class="history-link" data-i18n="viewAllTx">View all &rarr;</a>
+            </div>
+
+            <div class="table-responsive-wrapper">
+                <table class="markets-table">
+                    <thead>
+                        <tr>
+                            <th data-i18n="colType">Type</th>
+                            <th data-i18n="colAsset">Asset</th>
+                            <th data-i18n="colAmount">Amount</th>
+                            <th data-i18n="colStatus">Status</th>
+                            <th data-i18n="colDateTime">Date</th>
+                        </tr>
+                    </thead>
+                    <!-- Filled by VTHydrate.walletTransactions() from the same
+                         /api/me/transactions data as the full history view. -->
+                    <tbody id="walletTxBody">
+                        <tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:20px;">Loading…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <!-- SECURITY CENTER & MULTI-FACTOR PROTECTION -->
         <div class="security-checklist">
             <div style="font-size:16px; font-weight:800; color:var(--text-dark); margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;">

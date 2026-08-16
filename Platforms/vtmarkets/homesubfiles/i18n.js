@@ -301,6 +301,10 @@ var i18nDict = {
         ofTxCount: "of",
 
         themeToggle: "Light / Dark mode",
+        soundToggle: "Notification sound",
+        walletTxTitle: "Recent transactions",
+        walletTxSub: "Your latest deposits, withdrawals and transfers.",
+        viewAllTx: "View all →",
         colTime: "Time",
         infoMarketCap: "Market Cap",
         infoCircSupply: "Circulating Supply",
@@ -739,6 +743,10 @@ var i18nDict = {
         ofTxCount: "sur",
 
         themeToggle: "Mode clair / sombre",
+        soundToggle: "Son des notifications",
+        walletTxTitle: "Transactions récentes",
+        walletTxSub: "Vos derniers dépôts, retraits et transferts.",
+        viewAllTx: "Tout voir →",
         colTime: "Heure",
         infoMarketCap: "Capitalisation",
         infoCircSupply: "Offre en circulation",
@@ -1177,6 +1185,10 @@ var i18nDict = {
         ofTxCount: "de",
 
         themeToggle: "Modo claro / oscuro",
+        soundToggle: "Sonido de notificaciones",
+        walletTxTitle: "Transacciones recientes",
+        walletTxSub: "Tus últimos depósitos, retiros y transferencias.",
+        viewAllTx: "Ver todo →",
         colTime: "Hora",
         infoMarketCap: "Capitalización",
         infoCircSupply: "Suministro circulante",

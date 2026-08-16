@@ -332,6 +332,33 @@
       if (dot) dot.style.display = unread.length ? '' : 'none';
     },
 
+    // Compact transaction list for the wallet view, under the holdings table.
+    // Reads the same VTData.transactions the full history view uses — one fetch,
+    // two surfaces — and links out rather than duplicating pagination.
+    walletTransactions: function (root) {
+      var tbody = (root || document).querySelector('#walletTxBody');
+      if (!tbody) return;
+
+      var txns = VTData.transactions || [];
+      if (!txns.length) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:20px;">'
+          + 'No transactions yet.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = txns.slice(0, 5).map(function (t) {
+        var inc = t.type === 'deposit';
+        var amt = (inc ? '+' : '−') + Number(t.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return '<tr>' +
+          '<td><span class="change-pill ' + (inc ? 'pos' : 'neg') + '">' + esc(t.type) + '</span></td>' +
+          '<td><div class="tx-asset">' + esc(t.asset || t.currency || 'CAD') + '</div></td>' +
+          '<td><span class="tx-amount ' + (inc ? 'in' : 'out') + '">' + amt + '</span></td>' +
+          '<td><span class="tx-status-pill tx-status-' + esc(t.status) + '">' + esc(t.status) + '</span></td>' +
+          '<td style="color:var(--text-muted);font-size:11px;">' + fmtDate(t.created_at) + '</td>' +
+          '</tr>';
+      }).join('');
+    },
+
     // Real sign-in / security history from /api/me/activity. Replaces two
     // invented "active sessions" with fabricated IPs and cities.
     securityActivity: function (root) {
@@ -447,6 +474,7 @@
       if (!root) return;
       if (viewId === 'account') {
         VTHydrate.account(root);
+        VTHydrate.walletTransactions(root);
         VTHydrate.apiKeys(root);
         VTHydrate.securityActivity(root);
       }

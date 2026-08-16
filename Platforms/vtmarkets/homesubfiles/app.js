@@ -967,6 +967,87 @@ function searchTxHash(query) {
 // ================================================================
 // TOAST NOTIFICATION SYSTEM
 // ================================================================
+// Notification chime, synthesised with the Web Audio API rather than shipped as
+// an audio file: nothing to download, nothing to 404, and no binary in the repo.
+//
+// Browsers block audio until the user has interacted with the page, so the
+// context is created lazily on the first gesture. A notification that arrives
+// before any interaction is silent by design — that is the autoplay policy, not
+// a bug, and there is no way around it.
+var VTSound = (function () {
+    var ctx = null;
+    var MUTE_KEY = 'vt_sound_muted';
+
+    function muted() {
+        try { return localStorage.getItem(MUTE_KEY) === '1'; } catch (e) { return false; }
+    }
+
+    function setMuted(v) {
+        try { localStorage.setItem(MUTE_KEY, v ? '1' : '0'); } catch (e) {}
+    }
+
+    function ensureCtx() {
+        if (ctx) return ctx;
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return null;
+        try { ctx = new AC(); } catch (e) { return null; }
+        return ctx;
+    }
+
+    // Two short notes. `up` is a rising pair (something good), `down` falling
+    // (something went wrong), so the sound carries meaning without the screen.
+    function play(kind) {
+        if (muted()) return;
+        var c = ensureCtx();
+        if (!c) return;
+        if (c.state === 'suspended') { c.resume().catch(function () {}); }
+
+        var notes = kind === 'error' ? [660, 440] : kind === 'warning' ? [560, 560] : [660, 880];
+        var t0 = c.currentTime;
+
+        notes.forEach(function (freq, i) {
+            var osc = c.createOscillator();
+            var gain = c.createGain();
+            osc.type = 'sine';
+            osc.frequency.value = freq;
+            // Short attack/decay envelope — a click without one, a drone with too much.
+            var start = t0 + i * 0.11;
+            gain.gain.setValueAtTime(0.0001, start);
+            gain.gain.exponentialRampToValueAtTime(0.12, start + 0.015);
+            gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.16);
+            osc.connect(gain);
+            gain.connect(c.destination);
+            osc.start(start);
+            osc.stop(start + 0.18);
+        });
+    }
+
+    // Warm the context on the first real interaction so the first notification
+    // that matters is audible.
+    ['pointerdown', 'keydown'].forEach(function (evt) {
+        window.addEventListener(evt, function once() {
+            ensureCtx();
+            window.removeEventListener(evt, once);
+        }, { once: true });
+    });
+
+    return { play: play, muted: muted, setMuted: setMuted };
+})();
+
+function toggleNotificationSound() {
+    var next = !VTSound.muted();
+    VTSound.setMuted(next);
+    VTToast.info(next ? 'Sound off' : 'Sound on',
+        next ? 'Notification sounds are muted.' : 'Notification sounds are on.');
+    if (!next) VTSound.play('success');
+    updateSoundIcon();
+}
+
+function updateSoundIcon() {
+    var el = document.getElementById('soundToggleIcon');
+    if (el) el.textContent = VTSound.muted() ? '🔇' : '🔔';
+}
+
 var VTToast = (function () {
     var container = null;
     var ICONS = {
@@ -1001,6 +1082,7 @@ var VTToast = (function () {
 
         ensureContainer().appendChild(el);
         requestAnimationFrame(function () { el.classList.add('show'); });
+        if (typeof VTSound !== 'undefined') VTSound.play(type);
 
         function dismiss() {
             el.classList.remove('show');
@@ -1033,6 +1115,7 @@ var VTToast = (function () {
 document.addEventListener('DOMContentLoaded', function() {
     initTheme();
     renderBalance();
+    updateSoundIcon();
 });
 
 // CHART PAIR SELECTOR
