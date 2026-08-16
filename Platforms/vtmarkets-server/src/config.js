@@ -25,9 +25,12 @@ const config = {
   // (BTC/USDT and friends) are unrelated and are never derived from this.
   defaultCurrency: process.env.DEFAULT_CURRENCY || 'CAD',
 
+  // Browsers send Origin with no trailing slash, so a configured value of
+  // "https://example.com/" would never match and every request would 403. Strip
+  // it here rather than making the deployer get the punctuation exactly right.
   corsOrigins: (process.env.CORS_ORIGINS || '')
     .split(',')
-    .map((s) => s.trim())
+    .map((s) => s.trim().replace(/\/+$/, ''))
     .filter(Boolean),
 
   db: {
