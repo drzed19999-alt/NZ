@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '@/lib/api';
+import { useLiveRefresh } from '@/lib/useLiveRefresh';
 import { money, dateTime, timeAgo, presenceLabel } from '@/lib/format';
 import { generatePassword } from '@/lib/password';
 import { can, type Role } from '@/lib/rbac';
@@ -36,6 +37,9 @@ export default function InvestorDetailPage() {
   }, [id]);
 
   useEffect(() => { load(); }, [load]);
+  // Balances, transactions and the waiting-at-checkout bar all live here, so
+  // this is the page that most needs to be current without a reload.
+  useLiveRefresh(load, 15000);
 
   if (err) return <Notice tone="error" className="p-6">{err}</Notice>;
   if (!data) return <PageLoader label="Loading live investor data" />;

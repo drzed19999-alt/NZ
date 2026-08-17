@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
+import { useLiveRefresh } from '@/lib/useLiveRefresh';
 import { money, timeAgo } from '@/lib/format';
 import {
   DataTable, FilterBar, PageHeader, Pill, Select, StatGrid, StatusBadge,
@@ -111,6 +112,7 @@ export default function DirectoryPage() {
     const t = setTimeout(load, 250);
     return () => clearTimeout(t);
   }, [load]);
+  useLiveRefresh(load, 30000);
 
   const tiles: StatItem[] = [
     { label: 'Everyone', value: counts.all, hero: true },

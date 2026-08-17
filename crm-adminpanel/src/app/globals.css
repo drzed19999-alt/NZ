@@ -371,3 +371,51 @@ body {
     animation: none !important;
   }
 }
+
+/* ---------------------------------------------------------------
+ * WAITING AT CHECKOUT — urgency
+ *
+ * A customer is sitting on a spinner while this decision is not
+ * made, so the panel should be hard to scroll past. A slow pulse
+ * carries that; a fast shake would just be irritating on a screen
+ * someone works in all day.
+ *
+ * Honours prefers-reduced-motion: the border still reads as urgent
+ * without anything moving.
+ * ------------------------------------------------------------- */
+@keyframes crm-urgent-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(248, 113, 113, .45); border-color: rgba(248, 113, 113, .55); }
+  50%      { box-shadow: 0 0 0 6px rgba(248, 113, 113, 0); border-color: rgba(248, 113, 113, .9); }
+}
+
+/* A brief nudge on arrival — enough to catch the eye once, then stop. */
+@keyframes crm-urgent-nudge {
+  0%, 100% { transform: translateX(0); }
+  15%      { transform: translateX(-3px); }
+  30%      { transform: translateX(3px); }
+  45%      { transform: translateX(-2px); }
+  60%      { transform: translateX(2px); }
+  75%      { transform: translateX(-1px); }
+}
+
+.crm-urgent {
+  border: 1px solid rgba(248, 113, 113, .55) !important;
+  border-radius: 14px;
+  animation:
+    crm-urgent-nudge .5s ease-in-out 1,
+    crm-urgent-pulse 2s ease-in-out .5s infinite;
+}
+
+.crm-urgent-dot {
+  display: inline-block;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #F87171;
+  margin-right: 7px;
+  animation: crm-urgent-pulse 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .crm-urgent, .crm-urgent-dot { animation: none; }
+  .crm-urgent { border-color: rgba(248, 113, 113, .9) !important; }
+}

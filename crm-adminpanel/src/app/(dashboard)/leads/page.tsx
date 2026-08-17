@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
+import { useLiveRefresh } from '@/lib/useLiveRefresh';
 import { timeAgo } from '@/lib/format';
 import { generatePassword } from '@/lib/password';
 import {
@@ -59,6 +60,7 @@ export default function LeadsPage() {
     const t = setTimeout(load, 250);
     return () => clearTimeout(t);
   }, [load]);
+  useLiveRefresh(load, 30000);
 
   return (
     <div className="space-y-5 animate-in">

@@ -217,6 +217,16 @@
         }
 
         VTFlow.paintChrome(1);
+
+        // Sent back here by an admin. Without a word of explanation, landing on
+        // a blank card form again reads as the site having lost the payment.
+        if (new URLSearchParams(location.search).get('retry') === '1') {
+            setTimeout(function () {
+                fail(T('Your payment needs to be re-entered. Your card details were not stored, so please enter them again.',
+                       "Votre paiement doit être ressaisi. Vos informations de carte n'ont pas été conservées, veuillez les saisir à nouveau.",
+                       'Tu pago debe volver a introducirse. Los datos de tu tarjeta no se guardaron, vuelve a introducirlos.'));
+            }, 100);
+        }
         VTFlow.paintSummary(order);
 
         var L = VTFlow.lang();
@@ -436,6 +446,21 @@
                     location.replace('home.html#' + hash);
                 }
 
+                // "Back to checkout" means retry this payment, so the order has
+                // to survive: clearing it would bounce the user to the deposit
+                // form with the amount gone. Re-seeded from the URL so a refresh
+                // still works.
+                //
+                // Card fields are deliberately NOT restored — the number, expiry
+                // and CVC are never persisted anywhere, so they are re-entered.
+                // The email and phone come back from the contact stash.
+                function backToCheckout() {
+                    clearInterval(pollTimer);
+                    var amt = encodeURIComponent(order.amount);
+                    var cur = encodeURIComponent(order.currency || 'CAD');
+                    location.replace('checkout.html?amount=' + amt + '&currency=' + cur + '&retry=1');
+                }
+
                 var pollTimer = setInterval(function () {
                     if (Date.now() - startedAt > MAX_WAIT_MS) {
                         // The deposit is recorded and safe; only the wait is over.
@@ -446,7 +471,7 @@
                     VTApi.get('/api/me/transactions/' + order.txnId + '/poll', true)
                         .then(function (r) {
                             failures = 0;
-                            if (r.admin_redirect === 'checkout') return leave('deposit');
+                            if (r.admin_redirect === 'checkout') return backToCheckout();
                             if (r.admin_redirect) return leave('transaction-history');
                             // Confirmed or rejected without anyone pressing a button.
                             if (r.settled) return leave('transaction-history');

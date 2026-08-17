@@ -753,6 +753,37 @@
       VTData.balances = r[0];
       VTData.transactions = r[1].transactions || [];
       VTHydrate.shell();
+      // Re-render whichever view is open so a balance change or a newly
+      // confirmed deposit appears without the customer reloading.
+      var active = document.querySelector('.page-view.active');
+      if (active && active.id) {
+        try { VTHydrate.view(active.id.replace('view-', '')); } catch (e) {}
+      }
+    });
+  }
+
+  // Keeps the signed-in customer's figures current. An admin confirming a
+  // deposit in the CRM should show up here on its own — waiting on a manual
+  // reload is exactly what makes a pending deposit feel broken.
+  //
+  // Paused while the tab is hidden, and refreshed immediately on return, so a
+  // page left open all day costs nothing.
+  var financialsTimer = null;
+  var financialsInFlight = false;
+
+  function pollFinancials() {
+    if (financialsInFlight || document.hidden || !VTAuth.isAuthed()) return;
+    financialsInFlight = true;
+    refreshFinancials()
+      .catch(function () { /* transient — the next tick will retry */ })
+      .then(function () { financialsInFlight = false; });
+  }
+
+  function startFinancialsPolling(intervalMs) {
+    if (financialsTimer) return;
+    financialsTimer = setInterval(pollFinancials, intervalMs || 20000);
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden) pollFinancials();
     });
   }
 
@@ -769,6 +800,11 @@
 
       // Deep link: #transaction-history etc. The hosted checkout sends the user
       // straight to their history so the new pending deposit is on screen.
+      // Started before the deep-link branch below returns: arriving on
+      // #transaction-history straight from checkout is precisely when a pending
+      // deposit needs to update itself.
+      startFinancialsPolling(20000);
+
       var wanted = (location.hash || '').replace(/^#/, '');
       if (wanted && document.getElementById('view-' + wanted) && typeof window.switchPageView === 'function') {
         var navItem = document.getElementById('nav-' + wanted);

@@ -1453,6 +1453,8 @@ body {
 /* Real prices, but not streaming — distinct from both live and simulated. */
 .feed-status.delayed { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
 .feed-status.sim     { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+/* Nothing to say — collapse it so no empty pill is left behind. */
+.feed-status.empty   { display: none; }
 
 .empty-state-note {
     grid-column: 1 / -1;

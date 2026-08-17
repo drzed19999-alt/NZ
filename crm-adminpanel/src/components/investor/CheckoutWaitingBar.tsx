@@ -32,7 +32,8 @@ export function CheckoutWaitingBar({
 
   return (
     <Panel
-      title="Waiting at checkout"
+      className="crm-urgent"
+      title={<><span className="crm-urgent-dot" aria-hidden />Waiting at checkout</>}
       description="The customer is on the processing screen right now. Choose where to send them — until you do, they keep waiting."
     >
       <div className="space-y-3">

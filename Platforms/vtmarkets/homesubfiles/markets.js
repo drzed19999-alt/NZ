@@ -143,9 +143,11 @@ function syncFeedStatus() {
         return;
     }
 
-    el.textContent = t.feedSimulated || 'SIMULATED';
-    el.className = 'feed-status sim';
-    el.title = 'No market feed for this category — prices are simulated';
+    // No feed for this category. Rather than labelling it, show nothing — the
+    // badge is reserved for saying something true about a real source.
+    el.textContent = '';
+    el.className = 'feed-status empty';
+    el.removeAttribute('title');
 }
 
 // Pulls the cached quotes and writes real prices over the seeded ones. The
