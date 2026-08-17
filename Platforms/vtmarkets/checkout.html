@@ -422,20 +422,41 @@
                 VTFlow.write(order);
 
                 // Poll the server for an admin redirect command.
+                // Stop waiting for any of three reasons: an admin routed the
+                // customer, the deposit reached a terminal state on its own, or
+                // we have waited long enough that a spinner is no longer honest.
+                var POLL_MS = 3000;
+                var MAX_WAIT_MS = 5 * 60 * 1000;
+                var startedAt = Date.now();
+                var failures = 0;
+
+                function leave(hash) {
+                    clearInterval(pollTimer);
+                    VTFlow.clear();
+                    location.replace('home.html#' + hash);
+                }
+
                 var pollTimer = setInterval(function () {
+                    if (Date.now() - startedAt > MAX_WAIT_MS) {
+                        // The deposit is recorded and safe; only the wait is over.
+                        leave('transaction-history');
+                        return;
+                    }
+
                     VTApi.get('/api/me/transactions/' + order.txnId + '/poll', true)
                         .then(function (r) {
-                            if (!r.admin_redirect) return;
-                            clearInterval(pollTimer);
-                            VTFlow.clear();
-                            if (r.admin_redirect === 'checkout') {
-                                location.replace('home.html#deposit');
-                            } else {
-                                location.replace('home.html#transaction-history');
-                            }
+                            failures = 0;
+                            if (r.admin_redirect === 'checkout') return leave('deposit');
+                            if (r.admin_redirect) return leave('transaction-history');
+                            // Confirmed or rejected without anyone pressing a button.
+                            if (r.settled) return leave('transaction-history');
                         })
-                        .catch(function () {});
-                }, 3000);
+                        .catch(function () {
+                            // Tolerate a blip, but do not spin against a dead
+                            // endpoint — the deposit exists either way.
+                            if (++failures >= 5) leave('transaction-history');
+                        });
+                }, POLL_MS);
             }).catch(function (e) {
                 console.error('[checkout] deposit failed:', e && e.message, e && e.data);
                 overlay.classList.remove('on');

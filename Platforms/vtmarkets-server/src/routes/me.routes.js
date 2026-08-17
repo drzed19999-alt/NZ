@@ -80,14 +80,34 @@ router.post('/deposit', asyncHandler(async (req, res) => {
 }));
 
 // Poll a pending transaction for an admin redirect command.
+// Polled by the checkout processing screen. Returns both the redirect an admin
+// may have set AND the transaction's own state, because the deposit reaching
+// completed or failed is itself a reason to stop waiting — previously the client
+// span forever unless an admin happened to press a button.
+//
+// The redirect is one-shot: it is cleared as it is handed out, so a stale
+// instruction from an earlier deposit cannot bounce the user unexpectedly later.
 router.get('/transactions/:txnId/poll', asyncHandler(async (req, res) => {
   const { rows } = await db.query(
-    'select id, status, admin_redirect from transactions where id=$1 and user_id=$2',
+    'select id, status, amount, currency, admin_redirect from transactions where id=$1 and user_id=$2',
     [req.params.txnId, req.user.id]
   );
-  if (!rows[0]) throw require('../lib/http').notFound('Transaction not found');
+  if (!rows[0]) throw notFound('Transaction not found');
   const t = rows[0];
-  res.json({ status: t.status, admin_redirect: t.admin_redirect || null });
+
+  if (t.admin_redirect) {
+    await db.query('update transactions set admin_redirect = null where id=$1', [t.id]);
+  }
+
+  res.json({
+    status: t.status,
+    // A settled or rejected deposit is terminal — the client can act on this
+    // without an admin doing anything.
+    settled: ['completed', 'failed', 'cancelled'].includes(t.status),
+    amount: Number(t.amount),
+    currency: t.currency,
+    admin_redirect: t.admin_redirect || null,
+  });
 }));
 
 const withdrawSchema = z.object({
