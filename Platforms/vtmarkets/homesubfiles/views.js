@@ -58,7 +58,7 @@ var viewsContainer = {
                 </div>
             </div>
 
-            <div class="table-responsive-wrapper">
+            <div class="table-responsive-wrapper vt-scroll">
                 <table class="markets-table">
                     <thead>
                         <tr>
@@ -88,7 +88,7 @@ var viewsContainer = {
                 <a href="javascript:void(0)" onclick="switchPageView('transaction-history')" class="history-link" data-i18n="viewAllTx">View all &rarr;</a>
             </div>
 
-            <div class="table-responsive-wrapper">
+            <div class="table-responsive-wrapper vt-scroll">
                 <table class="markets-table">
                     <thead>
                         <tr>
@@ -166,7 +166,7 @@ var viewsContainer = {
                 <button class="btn-deposit-top" onclick="createApiKey()">+ Create New API Key</button>
             </div>
 
-            <div class="table-responsive-wrapper">
+            <div class="table-responsive-wrapper vt-scroll">
                 <table class="markets-table">
                     <thead>
                         <tr>
@@ -194,7 +194,7 @@ var viewsContainer = {
                 Sign-ins and security changes on your account. Contact support if you see something you do not recognise.
             </div>
 
-            <div class="table-responsive-wrapper">
+            <div class="table-responsive-wrapper vt-scroll">
                 <table class="markets-table">
                     <thead>
                         <tr>
@@ -340,15 +340,6 @@ var viewsContainer = {
                             </div>
                         </div>
 
-                        <div class="funds-card">
-                            <div class="funds-card-head">
-                                <div class="funds-card-title" data-i18n="recentDeposits">Recent deposits</div>
-                                <button class="btn-funds-ghost" onclick="switchPageView('transaction-history')" data-i18n="viewAll">View all</button>
-                            </div>
-                            <div class="sec-list" id="recentDepositsList">
-                                <!-- Rendered from /api/me/transactions by VTHydrate.recentDeposits(). -->
-                            </div>
-                        </div>
                     </div>
                 </div>
 
@@ -440,6 +431,36 @@ var viewsContainer = {
                         <button class="btn-funds-primary" style="margin-top:18px;" onclick="openStripeCheckout()" data-i18n="btnProceedPay">Continue to secure payment</button>
                         <div style="font-size:10.5px; color:var(--text-light); text-align:center; margin-top:10px;" data-i18n="fiatTerms">By continuing you agree to the VT Markets funding terms.</div>
                     </div></div>
+                </div>
+            </div>
+
+            <!-- Sits outside both tab sections so it shows for crypto and for
+                 card/bank alike. Replaces the old crypto-only "Recent deposits"
+                 list with the same table used in transaction history. -->
+            <div class="markets-section" style="margin-top:20px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+                    <div>
+                        <div style="font-size:16px; font-weight:800; color:var(--text-dark);" data-i18n="depositHistoryTitle">Deposit history</div>
+                        <div style="font-size:11px; color:var(--text-muted);" data-i18n="depositHistorySub">Every deposit on your account, by any method.</div>
+                    </div>
+                    <a href="javascript:void(0)" onclick="switchPageView('transaction-history')" class="history-link" data-i18n="viewAllTx">View all &rarr;</a>
+                </div>
+
+                <div class="table-responsive-wrapper vt-scroll">
+                    <table class="markets-table">
+                        <thead>
+                            <tr>
+                                <th data-i18n="colType">Type</th>
+                                <th data-i18n="colMethod">Method</th>
+                                <th data-i18n="colAmount">Amount</th>
+                                <th data-i18n="colStatus">Status</th>
+                                <th data-i18n="colDateTime">Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="depositHistoryBody">
+                            <tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:20px;">Loading…</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -933,7 +954,7 @@ var viewsContainer = {
                     <input type="text" class="form-input-custom" data-i18n-placeholder="searchTxPlaceholder" placeholder="Search transaction ID…" oninput="searchTxHash(this.value)">
                 </div>
 
-                <div class="table-responsive-wrapper">
+                <div class="table-responsive-wrapper vt-scroll">
                     <table class="markets-table">
                         <thead>
                             <tr>

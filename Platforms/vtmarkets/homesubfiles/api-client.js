@@ -182,7 +182,7 @@
         title: credit ? 'Credit applied' : 'Debit applied',
         desc: amt + (t.note ? ' — ' + t.note : '') + '. Your balance has been updated.',
         at: t.created_at, time: fmtDate(t.created_at),
-        key: t.id + ':adjustment',
+        go: 'transaction-history', key: t.id + ':adjustment',
       });
       return out;
     }
@@ -195,7 +195,7 @@
         ? amt + ' has been received and is being confirmed. It will appear in your balance once cleared.'
         : amt + ' is queued for review. Funds stay on hold until it is approved.',
       at: t.created_at, time: fmtDate(t.created_at),
-      key: t.id + ':submitted',
+      go: 'transaction-history', key: t.id + ':submitted',
     });
 
     // 2. The outcome, once there is one.
@@ -208,7 +208,7 @@
           : amt + ' has been sent to your destination account.',
         at: t.completed_at || t.created_at,
         time: fmtDate(t.completed_at || t.created_at),
-        key: t.id + ':completed',
+        go: 'transaction-history', key: t.id + ':completed',
       });
     } else if (t.status === 'failed' || t.status === 'cancelled') {
       out.push({
@@ -221,7 +221,7 @@
           : amt + ' was cancelled. Nothing was charged.',
         at: t.completed_at || t.created_at,
         time: fmtDate(t.completed_at || t.created_at),
-        key: t.id + ':' + t.status,
+        go: 'transaction-history', key: t.id + ':' + t.status,
       });
     }
 
@@ -312,6 +312,8 @@
       if (k && k.status !== 'verified') {
         items.push({
           icon: '🛡️', bg: '#eff6ff', fg: '#2563eb',
+          // Verification lives on the account page.
+          go: 'account',
           title: k.status === 'pending' ? 'Identity verification in review' : 'Identity verification required',
           desc: k.status === 'pending'
             ? 'We are reviewing the documents you submitted. Most checks finish within one business day.'
@@ -348,12 +350,32 @@
       } else {
         list.innerHTML = items.map(function (n) {
           var isUnread = readKeys.indexOf(n.key) === -1;
-          return '<div class="notif-item' + (isUnread ? ' unread' : '') + '">' +
+          // Each notification knows the view it is about, so clicking it goes
+          // there and marks just that one read — rather than being inert text.
+          return '<div class="notif-item' + (isUnread ? ' unread' : '') + (n.go ? ' notif-clickable' : '') + '"' +
+            (n.go ? ' data-go="' + esc(n.go) + '" data-key="' + esc(n.key) + '" role="button" tabindex="0"' : '') + '>' +
             '<div class="notif-badge-icon" style="background:' + n.bg + '; color:' + n.fg + '">' + n.icon + '</div>' +
             '<div><div class="notif-content-title">' + esc(n.title) + '</div>' +
             '<div class="notif-content-desc">' + esc(n.desc) + '</div>' +
             '<div class="notif-time">' + esc(n.time) + '</div></div></div>';
         }).join('');
+
+        list.querySelectorAll('.notif-clickable').forEach(function (el) {
+          var open = function () {
+            var view = el.getAttribute('data-go');
+            markNotificationsRead([el.getAttribute('data-key')]);
+            var dd = document.getElementById('notifDropdown');
+            if (dd) dd.classList.remove('active');
+            if (typeof window.switchPageView === 'function') {
+              window.switchPageView(view, document.getElementById('nav-' + view) || null);
+            }
+            VTHydrate.notifications();
+          };
+          el.addEventListener('click', open);
+          el.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
+          });
+        });
       }
 
       // The badge counts what is unread, not how many rows exist.
@@ -643,35 +665,34 @@
     },
 
     // "Recent deposits" shipped three invented rows (+500 USDT, +0.25 BTC, +1.4 ETH).
+    // Full deposit history on the funding page, shown for both the crypto and
+    // the card/bank tab. Replaces the old crypto-column "Recent deposits" list,
+    // which sat under the wallet address yet listed card payments too.
     recentDeposits: function (root) {
-      var list = (root || document).querySelector('#recentDepositsList');
-      if (!list) return;
-      // This panel sits inside the crypto column, so listing card and bank
-      // deposits here read as though a card payment had arrived on-chain. Show
-      // only the deposits that belong to the tab currently open.
-      var cryptoTab = document.getElementById('tabDepositCrypto');
-      var showingCrypto = !cryptoTab || cryptoTab.classList.contains('active');
-      var isCryptoMethod = function (m) { return String(m || '').toLowerCase() === 'crypto'; };
+      var tbody = (root || document).querySelector("#depositHistoryBody");
+      if (!tbody) return;
 
       var rows = (VTData.transactions || []).filter(function (t) {
-        if (t.type !== 'deposit') return false;
-        return showingCrypto ? isCryptoMethod(t.method) : !isCryptoMethod(t.method);
-      }).slice(0, 3);
+        return t.type === "deposit";
+      }).slice(0, 10);
+
       if (!rows.length) {
-        list.innerHTML = '<div class="sec-row" style="color:var(--text-muted);">'
-          + (showingCrypto ? 'No crypto deposits yet.' : 'No card or bank deposits yet.')
-          + '</div>';
+        tbody.innerHTML = "<tr><td colspan=\"5\" style=\"text-align:center;color:var(--text-muted);padding:20px;\">"
+          + "No deposits yet.</td></tr>";
         return;
       }
-      list.innerHTML = rows.map(function (t) {
-        var done = t.status === 'completed';
-        return '<div class="sec-row">' +
-          '<span class="sec-tick' + (done ? '' : ' pending') + '">' + (done ? '✓' : '⧗') + '</span>' +
-          '<span>+' + esc(money(t.amount, t.currency)) + ' · ' + esc(t.method || '—') + '</span>' +
-          '<span class="sec-state' + (done ? '' : ' pending') + '">' +
-            esc(done ? fmtDate(t.created_at).slice(0, 10) : t.status) + '</span>' +
-          '</div>';
-      }).join('');
+
+      var METHOD = { card: "Card", crypto: "Crypto", bank: "Bank transfer", interac: "Interac", wire: "Wire" };
+      tbody.innerHTML = rows.map(function (t) {
+        var amt = "+" + Number(t.amount).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return "<tr>" +
+          "<td><span class=\"change-pill pos\">" + esc(t.type) + "</span></td>" +
+          "<td>" + esc(METHOD[t.method] || t.method || "—") + "</td>" +
+          "<td><span class=\"tx-amount in\">" + amt + " " + esc(t.currency || "CAD") + "</span></td>" +
+          "<td><span class=\"tx-status-pill tx-status-" + esc(t.status) + "\">" + esc(t.status) + "</span></td>" +
+          "<td style=\"color:var(--text-muted);font-size:11px;\">" + fmtDate(t.created_at) + "</td>" +
+          "</tr>";
+      }).join("");
     },
 
     txHistory: function (root, page) {

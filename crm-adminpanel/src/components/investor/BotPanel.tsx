@@ -129,7 +129,7 @@ export function BotPanel({
       {events.length > 0 && (
         <div className="mt-4 pt-3" style={{ borderTop: '1px solid var(--border)' }}>
           <div className="label mb-2">Recent bot events</div>
-          <div className="space-y-1 max-h-[180px] overflow-y-auto">
+          <div className="space-y-1 max-h-[180px] overflow-y-auto crm-scroll">
             {events.map((e) => (
               <div key={e.id} className="text-xs muted">
                 {e.event} · {e.actor ?? 'system'} · {dateTime(e.created_at)}

@@ -33,7 +33,7 @@ export function DataTable<T>({
 }: DataTableProps<T>) {
   return (
     <div className="panel overflow-hidden">
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto crm-scroll">
         <table className="w-full">
           <thead>
             <tr>

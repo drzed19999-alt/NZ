@@ -170,7 +170,7 @@ export default function InvestorDetailPage() {
       <TabPanel id="timeline" active={tab}>
         <Panel title="Unified timeline"
           description="CRM history + platform activity + transactions, merged.">
-          <div className="space-y-1 max-h-[620px] overflow-y-auto pr-1">
+          <div className="space-y-1 max-h-[620px] overflow-y-auto crm-scroll pr-1">
             {data.timeline.map((e: any, i: number) => (
               <TimelineItem
                 key={i}

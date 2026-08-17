@@ -31,7 +31,7 @@ export function TransactionsPanel({
         {allowed && <Button className="text-xs" onClick={() => setOpen(true)}>+ New</Button>}
       </span>}
     >
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto crm-scroll">
         <table className="w-full">
           <thead>
             <tr>

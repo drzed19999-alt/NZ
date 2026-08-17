@@ -48,7 +48,7 @@ export function Tabs({
       ref={ref}
       role="tablist"
       onKeyDown={onKeyDown}
-      className={`flex items-stretch gap-1 overflow-x-auto ${className}`}
+      className={`flex items-stretch gap-1 overflow-x-auto crm-scroll-hidden ${className}`}
       style={{ borderBottom: '1px solid var(--border)' }}
     >
       {tabs.map((t) => {
