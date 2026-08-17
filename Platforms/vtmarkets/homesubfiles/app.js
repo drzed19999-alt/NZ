@@ -462,22 +462,12 @@ document.addEventListener('click', function (e) {
     }
 });
 
-var FIAT_PRESETS = [250, 500, 750, 1000];
-var fiatAmount = FIAT_PRESETS[0];
-
-function setFiatPreset(value, btn) {
-    fiatAmount = value;
-    document.querySelectorAll('.fiat-preset').forEach(function (b) { b.classList.remove('active'); });
-    if (btn) btn.classList.add('active');
-    var input = document.getElementById('fiatDepositAmountInput');
-    if (input) input.value = value.toFixed(2);
-    updateFiatSummary();
-}
-
+// The deposit amount is typed by hand — there are no preset buttons, and the
+// field starts empty rather than seeded, so nothing is submitted by accident.
 function updateFiatSummary() {
     var input = document.getElementById('fiatDepositAmountInput');
     var code = getFiatCurrency();
-    var amount = input ? (parseFloat(String(input.value).replace(/[^0-9.]/g, '')) || 0) : fiatAmount;
+    var amount = input ? (parseFloat(String(input.value).replace(/[^0-9.]/g, '')) || 0) : 0;
     var fmt = function (v) { return v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + code; };
     var set = function (id, v) { var e = document.getElementById(id); if (e) e.textContent = v; };
     set('fiatSumAmount', fmt(amount));
@@ -512,10 +502,10 @@ var WITHDRAW_METHODS = {
     },
     bank: {
         panel: 'wdPanelBank', kind: 'fiat', ico: '', cur: 'CAD', flat: 0, pct: 0, limit: 100000,
-        name: 'Canadian bank account', nameFr: 'Compte bancaire canadien', nameEs: 'Cuenta bancaria canadiense',
-        desc: 'Direct EFT deposit to any Canadian bank',
-        descFr: 'Virement EFT direct vers toute banque canadienne',
-        descEs: 'Depósito EFT directo a cualquier banco canadiense',
+        name: 'Bank account', nameFr: 'Compte bancaire', nameEs: 'Cuenta bancaria',
+        desc: 'Direct EFT transfer',
+        descFr: 'Virement EFT direct',
+        descEs: 'Transferencia EFT directa',
         eta: '1–3 business days', etaFr: '1–3 jours ouvrés', etaEs: '1–3 días hábiles',
         svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10l9-6 9 6"/><path d="M5 10v9M9.5 10v9M14.5 10v9M19 10v9"/><path d="M3 21h18"/></svg>'
     },
@@ -536,24 +526,6 @@ var WITHDRAW_METHODS = {
         descEs: 'Transferencia SWIFT en USD, EUR, GBP y más',
         eta: '1–5 business days', etaFr: '1–5 jours ouvrés', etaEs: '1–5 días hábiles',
         svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18z"/></svg>'
-    },
-    card: {
-        panel: 'wdPanelCard', kind: 'fiat', ico: 'slate', cur: 'CAD', flat: 0, pct: 1.5, limit: 25000,
-        name: 'Back to card', nameFr: 'Retour sur la carte', nameEs: 'Devolución a la tarjeta',
-        desc: 'Refund to the card used for your deposit',
-        descFr: 'Remboursement sur la carte utilisée pour le dépôt',
-        descEs: 'Reembolso a la tarjeta usada en el depósito',
-        eta: '1–3 business days', etaFr: '1–3 jours ouvrés', etaEs: '1–3 días hábiles',
-        svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>'
-    },
-    internal: {
-        panel: 'wdPanelInternal', kind: 'fiat', ico: '', cur: 'CAD', flat: 0, pct: 0, limit: 500000,
-        name: 'VT Markets transfer', nameFr: 'Transfert VT Markets', nameEs: 'Transferencia VT Markets',
-        desc: 'Instant transfer to another VT Markets account',
-        descFr: 'Transfert instantané vers un autre compte VT Markets',
-        descEs: 'Transferencia instantánea a otra cuenta VT Markets',
-        eta: 'Instant', etaFr: 'Instantané', etaEs: 'Instantáneo',
-        svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 2l4 4-4 4"/><path d="M3 6h18"/><path d="M7 22l-4-4 4-4"/><path d="M21 18H3"/></svg>'
     }
 };
 
@@ -694,11 +666,6 @@ function selectWithdrawDestination(value) {
     else { addr.value = ''; addr.focus(); }
 }
 
-function selectPayoutCard(el) {
-    document.querySelectorAll('#wdPanelCard .network-item').forEach(function (n) { n.classList.remove('active'); });
-    if (el) el.classList.add('active');
-}
-
 // ---- Canadian bank picker ----
 function renderBankGrid(filter) {
     var grid = document.getElementById('bankGrid');
@@ -795,11 +762,6 @@ function submitWithdrawal() {
         else if (!val('wireIban')) problem = 'Enter the IBAN or account number.';
         else if (!val('wireBank')) problem = 'Enter the beneficiary bank name and address.';
         destination = val('wireBank') + ' · ' + val('wireIban');
-    } else if (method === 'card') {
-        destination = 'Card on file';
-    } else if (method === 'internal') {
-        if (!val('internalUid')) problem = 'Enter the recipient UID or email.';
-        destination = val('internalUid');
     }
 
     if (!problem) {
@@ -816,9 +778,9 @@ function submitWithdrawal() {
         return;
     }
 
-    // The API only models crypto and bank. Everything else here (interac, wire,
-    // card, internal) settles through the banking rail, and the specific
-    // destination is carried in the destination string for the admin to action.
+    // The API only models crypto and bank. Everything else here (interac, wire)
+    // settles through the banking rail, and the specific destination is carried
+    // in the destination string for the admin to action.
     var apiMethod = method === 'crypto' ? 'crypto' : 'bank';
 
     var btn = document.getElementById('withdrawSubmitBtn');

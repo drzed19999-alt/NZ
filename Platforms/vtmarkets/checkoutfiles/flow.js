@@ -24,33 +24,33 @@ var VTFlow = (function () {
             step1: 'Payment', step2: 'Verification', step3: 'Confirmation',
             secure: 'Secure', back: 'Back to VT Markets',
             deposit: 'Deposit to trading account', fee: 'Processing fee', free: 'Free',
-            rate: 'Exchange rate', total: 'Total due today', amount: 'Amount to pay',
+            total: 'Total due today', amount: 'Amount to pay',
             trust1: 'Funds held in segregated custody',
             trust2: '256-bit TLS encryption end to end',
             trust3: 'PCI-DSS Level 1 certified processor',
-            footer: 'VT Markets never stores your full card number. This page is a prototype and does not process real payments.',
+            footer: 'VT Markets never stores your full card number.',
             expired: 'Your checkout session expired. Start the deposit again.'
         },
         fr: {
             step1: 'Paiement', step2: 'Vérification', step3: 'Confirmation',
             secure: 'Sécurisé', back: 'Retour à VT Markets',
             deposit: 'Dépôt sur le compte de trading', fee: 'Frais de traitement', free: 'Gratuit',
-            rate: 'Taux de change', total: "Total dû aujourd'hui", amount: 'Montant à payer',
+            total: "Total dû aujourd'hui", amount: 'Montant à payer',
             trust1: 'Fonds en conservation ségréguée',
             trust2: 'Chiffrement TLS 256 bits de bout en bout',
             trust3: 'Prestataire certifié PCI-DSS niveau 1',
-            footer: "VT Markets ne conserve jamais votre numéro de carte complet. Cette page est un prototype et ne traite aucun paiement réel.",
+            footer: "VT Markets ne conserve jamais votre numéro de carte complet.",
             expired: 'Votre session de paiement a expiré. Recommencez le dépôt.'
         },
         es: {
             step1: 'Pago', step2: 'Verificación', step3: 'Confirmación',
             secure: 'Seguro', back: 'Volver a VT Markets',
             deposit: 'Depósito en la cuenta de trading', fee: 'Comisión de procesamiento', free: 'Gratis',
-            rate: 'Tipo de cambio', total: 'Total a pagar hoy', amount: 'Importe a pagar',
+            total: 'Total a pagar hoy', amount: 'Importe a pagar',
             trust1: 'Fondos en custodia segregada',
             trust2: 'Cifrado TLS de 256 bits de extremo a extremo',
             trust3: 'Procesador certificado PCI-DSS nivel 1',
-            footer: 'VT Markets nunca almacena su número de tarjeta completo. Esta página es un prototipo y no procesa pagos reales.',
+            footer: 'VT Markets nunca almacena su número de tarjeta completo.',
             expired: 'Su sesión de pago ha caducado. Inicie el depósito de nuevo.'
         }
     };
@@ -156,7 +156,6 @@ var VTFlow = (function () {
         set('sumDepositVal', money(order.amount, order.currency));
         set('sumFeeLbl', t('fee'));
         set('sumFeeVal', t('free'));
-        set('sumRateLbl', t('rate'));
         set('sumTotalLbl', t('total'));
         set('sumTotalVal', money(order.amount, order.currency));
         set('sumBackLbl', t('back'));

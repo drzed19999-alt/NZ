@@ -391,14 +391,8 @@ var viewsContainer = {
 
                         <label class="funds-label" data-i18n="depositAmountLabel">Amount</label>
                         <div class="amount-wrap">
-                            <input type="text" inputmode="decimal" class="amount-input" id="fiatDepositAmountInput" placeholder="0.00" value="250.00" oninput="updateFiatSummary()">
+                            <input type="text" inputmode="decimal" class="amount-input" id="fiatDepositAmountInput" placeholder="0.00" oninput="updateFiatSummary()">
                             <span class="amount-unit" id="fiatUnitLabel">CAD</span>
-                        </div>
-                        <div class="fiat-preset-row" style="margin-top:10px;">
-                            <button class="fiat-preset active" onclick="setFiatPreset(250, this)">250</button>
-                            <button class="fiat-preset" onclick="setFiatPreset(500, this)">500</button>
-                            <button class="fiat-preset" onclick="setFiatPreset(750, this)">750</button>
-                            <button class="fiat-preset" onclick="setFiatPreset(1000, this)">1,000</button>
                         </div>
 
                         <div class="callout info" style="margin-top:16px;">
@@ -415,11 +409,10 @@ var viewsContainer = {
                             <div class="funds-card-title" data-i18n="orderSummary">Summary</div>
                         </div>
                         <div class="summary-box">
-                            <div class="summary-row"><span data-i18n="depositAmountLabel">Amount</span><strong id="fiatSumAmount">1,000.00 CAD</strong></div>
+                            <div class="summary-row"><span data-i18n="depositAmountLabel">Amount</span><strong id="fiatSumAmount">0.00 CAD</strong></div>
                             <div class="summary-row"><span data-i18n="processingFee">Processing fee</span><strong id="fiatSumFee">0.00 CAD</strong></div>
-                            <div class="summary-row"><span data-i18n="convRate">Conversion rate</span><strong>1.0000</strong></div>
                             <div class="summary-divider"></div>
-                            <div class="summary-row total"><span data-i18n="totalCredited">Credited to account</span><strong id="fiatSumTotal">1,000.00 CAD</strong></div>
+                            <div class="summary-row total"><span data-i18n="totalCredited">Credited to account</span><strong id="fiatSumTotal">0.00 CAD</strong></div>
                         </div>
 
                         <div class="sec-list" style="margin-top:14px;">
@@ -451,14 +444,13 @@ var viewsContainer = {
                         <thead>
                             <tr>
                                 <th data-i18n="colType">Type</th>
-                                <th data-i18n="colMethod">Method</th>
                                 <th data-i18n="colAmount">Amount</th>
                                 <th data-i18n="colStatus">Status</th>
                                 <th data-i18n="colDateTime">Date</th>
                             </tr>
                         </thead>
                         <tbody id="depositHistoryBody">
-                            <tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:20px;">Loading…</td></tr>
+                            <tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px;">Loading…</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -508,14 +500,9 @@ var viewsContainer = {
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10l9-6 9 6"/><path d="M5 10v9M9.5 10v9M14.5 10v9M19 10v9"/><path d="M3 21h18"/></svg>
                             </span>
                             <div>
-                                <div class="payout-name" data-i18n="payoutBank">Canadian bank account</div>
-                                <div class="payout-tagline" data-i18n="payoutBankDesc">Direct EFT deposit to any Canadian bank</div>
+                                <div class="payout-name" data-i18n="payoutBank">Bank account</div>
+                                <div class="payout-tagline" data-i18n="payoutBankDesc">Direct EFT transfer</div>
                             </div>
-                        </div>
-                        <div class="payout-meta">
-                            <span class="payout-pill">🇨🇦 CAD</span>
-                            <span class="payout-pill">1–3 <span data-i18n="businessDays">business days</span></span>
-                            <span class="payout-pill free" data-i18n="feeFree">No fee</span>
                         </div>
                     </button>
 
@@ -554,39 +541,6 @@ var viewsContainer = {
                         </div>
                     </button>
 
-                    <button class="payout-card" onclick="selectWithdrawMethod('card')">
-                        <div class="payout-top">
-                            <span class="payout-ico slate">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
-                            </span>
-                            <div>
-                                <div class="payout-name" data-i18n="payoutCard">Back to card</div>
-                                <div class="payout-tagline" data-i18n="payoutCardDesc">Refund to the card used for your deposit</div>
-                            </div>
-                        </div>
-                        <div class="payout-meta">
-                            <span class="payout-pill">💳 Visa / MC</span>
-                            <span class="payout-pill">1–3 <span data-i18n="businessDays">business days</span></span>
-                            <span class="payout-pill">1.5%</span>
-                        </div>
-                    </button>
-
-                    <button class="payout-card" onclick="selectWithdrawMethod('internal')">
-                        <div class="payout-top">
-                            <span class="payout-ico">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 2l4 4-4 4"/><path d="M3 6h18"/><path d="M7 22l-4-4 4-4"/><path d="M21 18H3"/></svg>
-                            </span>
-                            <div>
-                                <div class="payout-name" data-i18n="payoutInternal">VT Markets transfer</div>
-                                <div class="payout-tagline" data-i18n="payoutInternalDesc">Instant transfer to another VT Markets account</div>
-                            </div>
-                        </div>
-                        <div class="payout-meta">
-                            <span class="payout-pill">⚡ <span data-i18n="instant">Instant</span></span>
-                            <span class="payout-pill free" data-i18n="feeFree">No fee</span>
-                            <span class="payout-pill" data-i18n="pill247">24/7</span>
-                        </div>
-                    </button>
                 </div>
 
                 <div class="callout info" style="margin-top:18px;">
@@ -756,41 +710,6 @@ var viewsContainer = {
                                     <strong data-i18n="wireFeeTitle">Intermediary bank fees may apply</strong>
                                     <span data-i18n="wireFeeBody">Correspondent banks can deduct their own charges before the funds reach your account. VT Markets does not control those deductions.</span>
                                 </div>
-                            </div>
-                        </div>
-
-                        <!-- ---- CARD ---- -->
-                        <div class="funds-card wd-panel" id="wdPanelCard" style="display:none;">
-                            <div class="funds-card-head">
-                                <div class="funds-card-title"><span class="funds-step-num">1</span> <span data-i18n="selectCard">Select card</span></div>
-                            </div>
-                            <div class="network-list">
-                                <div class="network-item" style="color:var(--text-muted); font-size:12px;">
-                                    No card on file. Deposit with a card first — payouts return to the original card.
-                                </div>
-                            </div>
-                            <div class="callout info" style="margin-top:14px;">
-                                <span class="callout-icon">↩️</span>
-                                <div>
-                                    <strong data-i18n="cardRefundTitle">Refunds go back to the original card</strong>
-                                    <span data-i18n="cardRefundBody">Card payouts are limited to the total you deposited with that card. Anything above that must be withdrawn to a bank account.</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- ---- INTERNAL ---- -->
-                        <div class="funds-card wd-panel" id="wdPanelInternal" style="display:none;">
-                            <div class="funds-card-head">
-                                <div class="funds-card-title"><span class="funds-step-num">1</span> <span data-i18n="recipientAccount">Recipient account</span></div>
-                            </div>
-                            <div class="field-block">
-                                <label class="funds-label" data-i18n="recipientUid">Recipient UID or email</label>
-                                <input type="text" class="form-input-custom" id="internalUid" placeholder="Recipient UID" style="font-family:'JetBrains Mono',monospace;">
-                                <div class="field-hint" data-i18n="internalHint">Internal transfers are instant, free and stay on the VT Markets ledger</div>
-                            </div>
-                            <div class="field-block">
-                                <label class="funds-label" data-i18n="noteOptional">Note (optional)</label>
-                                <input type="text" class="form-input-custom" id="internalNote" placeholder="Reference for the recipient">
                             </div>
                         </div>
 

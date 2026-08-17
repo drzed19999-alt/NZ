@@ -143,10 +143,6 @@ function openCheckoutModal() {
                             <span>${T('Processing fee', 'Frais de traitement', 'Comisión de procesamiento')}</span>
                             <span class="vtpay-free">${T('Free', 'Gratuit', 'Gratis')}</span>
                         </div>
-                        <div class="vtpay-line">
-                            <span>${T('Exchange rate', 'Taux de change', 'Tipo de cambio')}</span>
-                            <span>1.0000</span>
-                        </div>
                         <div class="vtpay-line-sep"></div>
                         <div class="vtpay-line vtpay-total">
                             <span>${T('Total due today', "Total dû aujourd'hui", 'Total a pagar hoy')}</span>

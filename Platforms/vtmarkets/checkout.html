@@ -53,14 +53,6 @@
         </span>
     </header>
 
-    <nav class="flow-steps">
-        <div class="fstep" id="fstep1"><span class="fstep-dot">1</span><span class="fstep-label on-mobile">Payment</span></div>
-        <div class="fstep-bar"></div>
-        <div class="fstep" id="fstep2"><span class="fstep-dot">2</span><span class="fstep-label">Verification</span></div>
-        <div class="fstep-bar"></div>
-        <div class="fstep" id="fstep3"><span class="fstep-dot">3</span><span class="fstep-label">Confirmation</span></div>
-    </nav>
-
     <main class="flow-main">
         <div class="flow-card">
 
@@ -79,7 +71,6 @@
                     <div class="sum-lines">
                         <div class="sum-row"><span id="sumDepositLbl">Deposit</span><span id="sumDepositVal">—</span></div>
                         <div class="sum-row"><span id="sumFeeLbl">Fee</span><span class="sum-free" id="sumFeeVal">Free</span></div>
-                        <div class="sum-row"><span id="sumRateLbl">Rate</span><span>1.0000</span></div>
                         <div class="sum-sep"></div>
                         <div class="sum-row total"><span id="sumTotalLbl">Total</span><span id="sumTotalVal">—</span></div>
                     </div>
@@ -222,9 +213,9 @@
         // a blank card form again reads as the site having lost the payment.
         if (new URLSearchParams(location.search).get('retry') === '1') {
             setTimeout(function () {
-                fail(T('Your payment needs to be re-entered. Your card details were not stored, so please enter them again.',
-                       "Votre paiement doit être ressaisi. Vos informations de carte n'ont pas été conservées, veuillez les saisir à nouveau.",
-                       'Tu pago debe volver a introducirse. Los datos de tu tarjeta no se guardaron, vuelve a introducirlos.'));
+                fail(T('Your payment needs to be re-entered. Your details are incorrect, please enter them again.',
+                       'Votre paiement doit être ressaisi. Vos informations sont incorrects, veuillez les saisir à nouveau.',
+                       'Tu pago debe volver a introducirse. Tus datos son incorrectos, vuelve a introducirlos.'));
             }, 100);
         }
         VTFlow.paintSummary(order);

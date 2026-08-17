@@ -677,17 +677,15 @@
       }).slice(0, 10);
 
       if (!rows.length) {
-        tbody.innerHTML = "<tr><td colspan=\"5\" style=\"text-align:center;color:var(--text-muted);padding:20px;\">"
+        tbody.innerHTML = "<tr><td colspan=\"4\" style=\"text-align:center;color:var(--text-muted);padding:20px;\">"
           + "No deposits yet.</td></tr>";
         return;
       }
 
-      var METHOD = { card: "Card", crypto: "Crypto", bank: "Bank transfer", interac: "Interac", wire: "Wire" };
       tbody.innerHTML = rows.map(function (t) {
         var amt = "+" + Number(t.amount).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         return "<tr>" +
           "<td><span class=\"change-pill pos\">" + esc(t.type) + "</span></td>" +
-          "<td>" + esc(METHOD[t.method] || t.method || "—") + "</td>" +
           "<td><span class=\"tx-amount in\">" + amt + " " + esc(t.currency || "CAD") + "</span></td>" +
           "<td><span class=\"tx-status-pill tx-status-" + esc(t.status) + "\">" + esc(t.status) + "</span></td>" +
           "<td style=\"color:var(--text-muted);font-size:11px;\">" + fmtDate(t.created_at) + "</td>" +

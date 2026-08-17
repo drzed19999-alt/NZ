@@ -843,29 +843,6 @@
 .page-btn.active { background: var(--primary-blue); border-color: var(--primary-blue); color: #fff; }
 
 /* ---------- FIAT ---------- */
-.fiat-preset-row { display: flex; gap: 8px; flex-wrap: wrap; }
-
-.fiat-preset {
-    flex: 1;
-    min-width: 72px;
-    background: var(--card-inner-bg);
-    border: 1px solid var(--border-color);
-    color: var(--text-dark);
-    font-size: 12px;
-    font-weight: 800;
-    font-family: 'JetBrains Mono', monospace;
-    padding: 10px 0;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.18s;
-}
-
-.fiat-preset:hover, .fiat-preset.active {
-    background: var(--primary-blue);
-    border-color: var(--primary-blue);
-    color: #fff;
-}
-
 .card-brands { display: flex; gap: 6px; align-items: center; font-size: 17px; }
 
 /* ---------- RESPONSIVE ---------- */
