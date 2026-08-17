@@ -395,6 +395,7 @@ var i18nDict = {
         // News & Leaderboard
         feedLive: "LIVE",
         feedSimulated: "SIMULATED",
+        feedAsOf: "AS OF",
 
         newsTitle: "Market News & Analysis",
         newsEmpty: "No market commentary published yet.",
@@ -837,6 +838,7 @@ var i18nDict = {
         // News & Leaderboard
         feedLive: "EN DIRECT",
         feedSimulated: "SIMULÉ",
+        feedAsOf: "AU",
 
         newsTitle: "Actualités & Analyses du Marché",
         newsEmpty: "Aucun commentaire de marché publié pour le moment.",
@@ -1279,6 +1281,7 @@ var i18nDict = {
         // News & Leaderboard
         feedLive: "EN VIVO",
         feedSimulated: "SIMULADO",
+        feedAsOf: "A LAS",
 
         newsTitle: "Noticias y Análisis del Mercado",
         newsEmpty: "Aún no se ha publicado ningún comentario de mercado.",

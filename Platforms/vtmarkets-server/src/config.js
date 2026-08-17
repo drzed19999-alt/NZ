@@ -67,6 +67,13 @@ const config = {
     from: process.env.SMTP_FROM || 'VT Markets <no-reply@vtmarkets.example>',
   },
 
+  // Non-crypto market data (Twelve Data). Server-side only: in the static
+  // frontend the key would be readable in page source, and every visitor's
+  // browser would spend the shared daily quota.
+  marketData: {
+    apiKey: process.env.MARKET_DATA_API_KEY || '',
+  },
+
   frontendBaseUrl: process.env.FRONTEND_BASE_URL || 'http://localhost:5500',
 };
 

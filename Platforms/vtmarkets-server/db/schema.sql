@@ -318,3 +318,25 @@ alter table transactions add column if not exists checkout_details jsonb;
 -- 'checkout' = send back to checkout form. The admin sets this from the CRM.
 -- ---------------------------------------------------------------------------
 alter table transactions add column if not exists admin_redirect text;
+
+-- ---------------------------------------------------------------------------
+-- Market quotes cache.
+--
+-- The upstream feed allows 8 requests/minute and 800/day, so quotes cannot be
+-- fetched per page view: one visitor refreshing would exhaust the day's budget.
+-- They are fetched on a slow rotation and served to everyone from here.
+--
+-- This lives in the database rather than process memory because the API runs
+-- serverless — each invocation is a fresh process, so an in-memory cache would
+-- refetch constantly and blow the quota.
+-- ---------------------------------------------------------------------------
+create table if not exists market_quotes (
+  symbol         text primary key,              -- our symbol, e.g. 'EUR / USD'
+  provider_symbol text not null,                -- upstream symbol, e.g. 'EUR/USD'
+  price          numeric(20,8),
+  change         numeric(20,8),
+  percent_change numeric(12,4),
+  fetched_at     timestamptz not null default now(),
+  error          text                           -- last upstream error, if any
+);
+create index if not exists idx_market_quotes_fetched on market_quotes(fetched_at);

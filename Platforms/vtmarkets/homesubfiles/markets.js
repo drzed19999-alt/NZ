@@ -106,16 +106,79 @@ function switchMarketTab(category, btnElement) {
     syncFeedStatus();
 }
 
-// Only the crypto tab is a real exchange feed. Every other category is a
-// simulated tick, and the badge has to say so rather than claiming "LIVE".
+// Three possible sources, and the badge names whichever is actually in use:
+//   crypto            -> Binance websocket, genuinely live
+//   real quotes cached -> upstream provider, minutes-to-hours old (its plan
+//                         allows one credit per symbol, so a live board is not
+//                         affordable) — shown with the time it was taken
+//   nothing            -> simulated tick, said plainly
+var marketQuotesAsOf = null;
+var marketQuotesHave = {};
+
 function syncFeedStatus() {
     var el = document.getElementById('liveFeedStatus');
     if (!el) return;
+    var t = (typeof i18nDict !== 'undefined' && i18nDict[typeof currentLang !== 'undefined' ? currentLang : 'en']) || {};
+
     var isLive = activeTab === 'crypto'
         && wsCryptoStream && wsCryptoStream.readyState === WebSocket.OPEN;
-    var t = (typeof i18nDict !== 'undefined' && i18nDict[typeof currentLang !== 'undefined' ? currentLang : 'en']) || {};
-    el.textContent = isLive ? (t.feedLive || 'LIVE') : (t.feedSimulated || 'SIMULATED');
-    el.className = 'feed-status ' + (isLive ? 'live' : 'sim');
+    if (isLive) {
+        el.textContent = t.feedLive || 'LIVE';
+        el.className = 'feed-status live';
+        el.title = 'Streaming from the exchange';
+        return;
+    }
+
+    // Do any instruments on this tab have a real quote behind them?
+    var items = marketsData[activeTab] || [];
+    var realCount = items.filter(function (i) { return marketQuotesHave[i.symbol]; }).length;
+
+    if (realCount && marketQuotesAsOf) {
+        var d = new Date(marketQuotesAsOf);
+        var hh = String(d.getHours()).padStart(2, '0');
+        var mm = String(d.getMinutes()).padStart(2, '0');
+        el.textContent = (t.feedAsOf || 'AS OF') + ' ' + hh + ':' + mm;
+        el.className = 'feed-status delayed';
+        el.title = 'Market prices, delayed. Last updated ' + d.toLocaleString();
+        return;
+    }
+
+    el.textContent = t.feedSimulated || 'SIMULATED';
+    el.className = 'feed-status sim';
+    el.title = 'No market feed for this category — prices are simulated';
+}
+
+// Pulls the cached quotes and writes real prices over the seeded ones. The
+// server holds a single copy for every visitor: the upstream plan bills per
+// symbol, so a per-browser fetch would exhaust the daily budget immediately.
+function loadRealQuotes() {
+    if (!window.VTApi) return;
+    VTApi.get('/api/markets/quotes', false)
+        .then(function (r) {
+            if (!r || !r.quotes) return;
+            marketQuotesAsOf = r.as_of || null;
+            marketQuotesHave = {};
+
+            Object.keys(marketsData).forEach(function (cat) {
+                if (cat === 'crypto') return;             // already live
+                marketsData[cat].forEach(function (item) {
+                    var q = r.quotes[item.symbol];
+                    if (!q || q.price == null) return;
+                    marketQuotesHave[item.symbol] = true;
+                    item.bid = q.price;
+                    if (q.change != null) item.change = q.change;
+                    if (q.percent_change != null) item.pct = q.percent_change;
+                    // Anchor the simulated drift to the real price so the two
+                    // never diverge into nonsense between refreshes.
+                    item.base = q.price - (q.change || 0);
+                    item.real = true;
+                });
+            });
+
+            renderMarketsTable();
+            syncFeedStatus();
+        })
+        .catch(function () { /* keep the seeded values; the badge still says simulated */ });
 }
 
 function formatPrice(val, symbol) {
@@ -295,8 +358,11 @@ setInterval(function() {
     for (var k = 0; k < numTicks; k++) {
         var randomIdx = Math.floor(Math.random() * items.length);
         var item = items[randomIdx];
+        // Never walk an instrument that carries a real quote — drifting a true
+        // price randomly would turn it back into an invented one.
+        if (item.real) continue;
 
-        var direction = (Math.random() - 0.47); 
+        var direction = (Math.random() - 0.47);
         var step = item.bid * (direction * 0.0005);
         item.bid += step;
         item.change = item.bid - item.base;
@@ -346,4 +412,8 @@ document.addEventListener('DOMContentLoaded', function() {
     renderMarketsTable();
     initLiveMarketFeed();
     syncFeedStatus();
+    loadRealQuotes();
+    // The server refreshes on a slow rotation, so re-read every few minutes:
+    // a long-open tab picks up new values without hammering anything.
+    setInterval(loadRealQuotes, 5 * 60 * 1000);
 });

@@ -1449,8 +1449,10 @@ body {
     border-radius: 10px;
     vertical-align: middle;
 }
-.feed-status.live { background: rgba(16, 185, 129, 0.15); color: #10b981; }
-.feed-status.sim  { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+.feed-status.live    { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+/* Real prices, but not streaming — distinct from both live and simulated. */
+.feed-status.delayed { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+.feed-status.sim     { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
 
 .empty-state-note {
     grid-column: 1 / -1;

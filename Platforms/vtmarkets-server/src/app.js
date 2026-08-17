@@ -12,6 +12,7 @@ const { ApiError } = require('./lib/http');
 const authRoutes = require('./routes/auth.routes');
 const meRoutes = require('./routes/me.routes');
 const integrationRoutes = require('./routes/integration.routes');
+const marketsRoutes = require('./routes/markets.routes');
 
 const app = express();
 
@@ -123,6 +124,7 @@ app.get('/', (_req, res) =>
 // --- Routes --------------------------------------------------------------
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/me', apiLimiter, meRoutes);
+app.use('/api/markets', apiLimiter, marketsRoutes);
 app.use('/api/integration/v1', integrationLimiter, integrationRoutes);
 
 // --- 404 -----------------------------------------------------------------
