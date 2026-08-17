@@ -151,58 +151,81 @@
     } catch (e) { /* storage unavailable — badge just stays visible */ }
   }
 
-  // Turns a transaction row into something a customer can read. The body used to
-  // be `'Status: ' + t.status`, which rendered as "Status: pending" — a field
-  // dump, not a sentence, and it never said what happens next.
-  function buildTxNotification(t) {
-    var amt = money(t.amount, t.currency);
-    var isDep = t.type === 'deposit';
-    var noun = isDep ? 'Deposit' : t.type === 'withdrawal' ? 'Withdrawal' : 'Transaction';
+  // Is this money arriving? Deposits are, withdrawals are not, and an adjustment
+  // depends on the direction the admin chose — its amount is stored unsigned, so
+  // `type === 'deposit'` alone showed every admin credit as a debit.
+  function isIncoming(t) {
+    if (t.type === 'adjustment') return t.direction !== 'debit';
+    return t.type === 'deposit';
+  }
 
-    var copy = {
-      pending: {
-        title: noun + ' awaiting confirmation',
-        desc: isDep
-          ? amt + ' has been received and is being confirmed. It will appear in your balance once cleared.'
-          : amt + ' is queued for review. Funds stay on hold until it is approved.',
-        icon: '⏳', bg: '#fef3c7', fg: '#b45309',
-      },
-      processing: {
-        title: noun + ' in progress',
-        desc: amt + ' is being processed. This usually completes within a few minutes.',
-        icon: '⏳', bg: '#fef3c7', fg: '#b45309',
-      },
-      completed: {
+  // One transaction can produce more than one notification: it was submitted,
+  // and later it settled. Both are real events the customer wants to keep seeing
+  // — the settlement notice replacing the pending one made the earlier event
+  // vanish as though it had never happened.
+  //
+  // The two entries are derived from created_at and completed_at, which the row
+  // already carries, so no extra history table is needed.
+  function buildTxNotifications(t) {
+    var amt = money(t.amount, t.currency);
+    var isDep = isIncoming(t);
+    var noun = isDep ? 'Deposit' : t.type === 'withdrawal' ? 'Withdrawal'
+      : t.type === 'adjustment' ? 'Account adjustment' : 'Transaction';
+    var out = [];
+
+    // Adjustments are applied by an admin and are instantaneous — there is no
+    // pending stage to report, only the credit or debit itself.
+    if (t.type === 'adjustment') {
+      var credit = Number(t.amount) >= 0;
+      out.push({
+        icon: credit ? '↓' : '↑', bg: credit ? '#dcfce7' : '#fee2e2', fg: credit ? '#15803d' : '#b91c1c',
+        title: credit ? 'Credit applied' : 'Debit applied',
+        desc: amt + (t.note ? ' — ' + t.note : '') + '. Your balance has been updated.',
+        at: t.created_at, time: fmtDate(t.created_at),
+        key: t.id + ':adjustment',
+      });
+      return out;
+    }
+
+    // 1. Submitted. Always happened, whatever state it is in now.
+    out.push({
+      icon: '⏳', bg: '#fef3c7', fg: '#b45309',
+      title: noun + ' submitted',
+      desc: isDep
+        ? amt + ' has been received and is being confirmed. It will appear in your balance once cleared.'
+        : amt + ' is queued for review. Funds stay on hold until it is approved.',
+      at: t.created_at, time: fmtDate(t.created_at),
+      key: t.id + ':submitted',
+    });
+
+    // 2. The outcome, once there is one.
+    if (t.status === 'completed') {
+      out.push({
+        icon: isDep ? '↓' : '↑', bg: '#dcfce7', fg: '#15803d',
         title: isDep ? 'Funds credited' : 'Withdrawal sent',
         desc: isDep
           ? amt + ' has cleared and is now available in your balance.'
           : amt + ' has been sent to your destination account.',
-        icon: isDep ? '↓' : '↑', bg: '#dcfce7', fg: '#15803d',
-      },
-      failed: {
-        title: noun + ' failed',
-        desc: amt + ' could not be processed and no funds were taken. Contact support if this repeats.',
-        icon: '⚠', bg: '#fee2e2', fg: '#b91c1c',
-      },
-      cancelled: {
-        title: noun + ' cancelled',
-        desc: amt + ' was cancelled. Nothing was charged.',
-        icon: '⊘', bg: '#f1f5f9', fg: '#475569',
-      },
-    };
+        at: t.completed_at || t.created_at,
+        time: fmtDate(t.completed_at || t.created_at),
+        key: t.id + ':completed',
+      });
+    } else if (t.status === 'failed' || t.status === 'cancelled') {
+      out.push({
+        icon: t.status === 'failed' ? '⚠' : '⊘',
+        bg: t.status === 'failed' ? '#fee2e2' : '#f1f5f9',
+        fg: t.status === 'failed' ? '#b91c1c' : '#475569',
+        title: noun + ' ' + t.status,
+        desc: t.status === 'failed'
+          ? amt + ' could not be processed and no funds were taken. Contact support if this repeats.'
+          : amt + ' was cancelled. Nothing was charged.',
+        at: t.completed_at || t.created_at,
+        time: fmtDate(t.completed_at || t.created_at),
+        key: t.id + ':' + t.status,
+      });
+    }
 
-    var c = copy[t.status] || {
-      title: noun + ' ' + amt,
-      desc: 'This transaction is being reviewed.',
-      icon: isDep ? '↓' : '↑', bg: '#f1f5f9', fg: '#475569',
-    };
-
-    return {
-      icon: c.icon, bg: c.bg, fg: c.fg,
-      title: c.title, desc: c.desc,
-      time: fmtDate(t.created_at),
-      key: t.id + ':' + t.status,
-    };
+    return out;
   }
 
   // ---------------- transaction paging ----------------
@@ -299,9 +322,18 @@
           time: k.updated_at ? fmtDate(k.updated_at) : '',
         });
       }
-      (VTData.transactions || []).slice(0, 5).forEach(function (t) {
-        items.push(buildTxNotification(t));
+      (VTData.transactions || []).slice(0, 10).forEach(function (t) {
+        buildTxNotifications(t).forEach(function (n) { items.push(n); });
       });
+
+      // Newest first. Items without a timestamp (the KYC prompt) stay on top —
+      // it is a standing call to action, not something that happened at a moment.
+      items.sort(function (a, b) {
+        if (!a.at) return -1;
+        if (!b.at) return 1;
+        return new Date(b.at).getTime() - new Date(a.at).getTime();
+      });
+      items = items.slice(0, 12);
 
       // Read state is keyed by content, so an item stays read until the thing it
       // describes actually changes — a deposit going pending -> completed is a
@@ -347,7 +379,7 @@
       }
 
       tbody.innerHTML = txns.slice(0, 5).map(function (t) {
-        var inc = t.type === 'deposit';
+        var inc = isIncoming(t);
         var amt = (inc ? '+' : '−') + Number(t.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         return '<tr>' +
           '<td><span class="change-pill ' + (inc ? 'pos' : 'neg') + '">' + esc(t.type) + '</span></td>' +
@@ -614,9 +646,21 @@
     recentDeposits: function (root) {
       var list = (root || document).querySelector('#recentDepositsList');
       if (!list) return;
-      var rows = (VTData.transactions || []).filter(function (t) { return t.type === 'deposit'; }).slice(0, 3);
+      // This panel sits inside the crypto column, so listing card and bank
+      // deposits here read as though a card payment had arrived on-chain. Show
+      // only the deposits that belong to the tab currently open.
+      var cryptoTab = document.getElementById('tabDepositCrypto');
+      var showingCrypto = !cryptoTab || cryptoTab.classList.contains('active');
+      var isCryptoMethod = function (m) { return String(m || '').toLowerCase() === 'crypto'; };
+
+      var rows = (VTData.transactions || []).filter(function (t) {
+        if (t.type !== 'deposit') return false;
+        return showingCrypto ? isCryptoMethod(t.method) : !isCryptoMethod(t.method);
+      }).slice(0, 3);
       if (!rows.length) {
-        list.innerHTML = '<div class="sec-row" style="color:var(--text-muted);">No deposits yet.</div>';
+        list.innerHTML = '<div class="sec-row" style="color:var(--text-muted);">'
+          + (showingCrypto ? 'No crypto deposits yet.' : 'No card or bank deposits yet.')
+          + '</div>';
         return;
       }
       list.innerHTML = rows.map(function (t) {
@@ -649,7 +693,7 @@
       renderTxPagination(root, all.length, current);
 
       tbody.innerHTML = slice.map(function (t) {
-        var inc = t.type === 'deposit';
+        var inc = isIncoming(t);
         var pill = inc ? 'pos' : 'neg';
         var amt = (inc ? '+' : '−') + Number(t.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         var statusClass = 'tx-status-' + t.status;

@@ -22,7 +22,7 @@
 
     <!-- SIDEBAR NAVIGATION -->
     <aside class="sidebar" id="sidebar">
-        <div class="sidebar-logo">
+        <div class="sidebar-logo" onclick="switchPageView('home')" style="cursor:pointer;" title="Home">
             <div class="logo-mark">vt</div>
             <div class="logo-text">vt <span>markets</span></div>
         </div>
@@ -157,7 +157,6 @@
                         <circle cx="16.5" cy="13.5" r="1.2" fill="currentColor" stroke="none"></circle>
                     </svg>
                     <span class="nav-balance-meta">
-                        <span class="nav-balance-label" data-i18n="navBalance">Balance</span>
                         <span class="nav-balance-val" id="navBalanceVal">$0.00</span>
                     </span>
                 </a>
@@ -359,7 +358,7 @@
                                             <span class="c-type" onclick="setChartType('depth', this)" data-i18n="typeDepth">Depth</span>
                                         </div>
                                         <div class="ind-group">
-                                            <button class="ind-btn active" onclick="toggleIndicator('ma', this)">MA</button>
+                                            <button class="ind-btn" onclick="toggleIndicator('ma', this)">MA</button>
                                             <button class="ind-btn" onclick="toggleIndicator('boll', this)">BOLL</button>
                                             <button class="ind-btn active" onclick="toggleIndicator('vol', this)">VOL</button>
                                         </div>

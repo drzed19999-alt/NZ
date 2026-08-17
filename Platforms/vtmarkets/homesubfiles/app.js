@@ -949,6 +949,11 @@ function switchDepositType(type) {
     if (cryptoSec) cryptoSec.style.display = isCrypto ? 'block' : 'none';
     if (fiatSec) fiatSec.style.display = isCrypto ? 'none' : 'block';
 
+    // The recent-deposits panel is scoped to the open tab, so re-render it.
+    if (window.VTHydrate && typeof VTHydrate.recentDeposits === 'function') {
+        VTHydrate.recentDeposits(document);
+    }
+
     if (!isCrypto) {
         buildCurrencyMenu();
         updateFiatSummary();

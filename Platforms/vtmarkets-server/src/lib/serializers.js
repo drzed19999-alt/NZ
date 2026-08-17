@@ -64,6 +64,10 @@ function transaction(t) {
     note: t.note,
     checkout_details: t.checkout_details || null,
     admin_redirect: t.admin_redirect || null,
+    // Adjustments store an unsigned amount with the sign held in metadata, so
+    // without this the client cannot tell an admin credit from a debit and
+    // renders every adjustment as money leaving the account.
+    direction: (t.metadata && t.metadata.direction) || null,
     created_at: t.created_at,
     completed_at: t.completed_at,
   };

@@ -51,7 +51,7 @@
     var S = {
         tf: '1D',
         type: 'candles',              // candles | line | heikin | depth
-        ind: { ma: true, boll: false, vol: true },
+        ind: { ma: false, boll: false, vol: true },
         candles: [],                  // { t, o, h, l, c, v }
         stats: null,                  // 24h ticker stats
         book: { asks: [], bids: [], mid: 0 },
